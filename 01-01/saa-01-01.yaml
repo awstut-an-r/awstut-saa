@@ -1,0 +1,213 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Parameters:
+  LatestAmiId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+
+  DomainName:
+    Type: String
+    Default: awstut.net
+    
+
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+
+  IGW:
+    Type: AWS::EC2::InternetGateway
+
+  IGWAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref IGW
+
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: 10.0.1.0/24
+      VpcId: !Ref VPC
+      AvailabilityZone: ap-northeast-1a
+      
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: 10.0.2.0/24
+      VpcId: !Ref VPC
+      AvailabilityZone: ap-northeast-1c
+
+  RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+
+  RouteToInternet:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref RouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref IGW
+
+  PublicSubnetRouteTableAssociation1:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet1
+      RouteTableId: !Ref RouteTable
+      
+  PublicSubnetRouteTableAssociation2:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet2
+      RouteTableId: !Ref RouteTable
+
+  Instance1:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref LatestAmiId
+      InstanceType: t3.nano
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          SubnetId: !Ref PublicSubnet1
+          GroupSet:
+            - !Ref SecurityGroup
+      UserData: !Base64 |
+        #!/bin/bash -xe
+        yum update -y
+        yum install -y httpd
+        systemctl start httpd
+        systemctl enable httpd
+        echo "Hello World form Instance 1." > /var/www/html/index.html
+        
+  Instance2:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref LatestAmiId
+      InstanceType: t3.nano
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          SubnetId: !Ref PublicSubnet2
+          GroupSet:
+            - !Ref SecurityGroup
+      UserData: !Base64 |
+        #!/bin/bash -xe
+        yum update -y
+        yum install -y httpd
+        systemctl start httpd
+        systemctl enable httpd
+        echo "Hello World form Instance 2." > /var/www/html/index.html
+
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: sg
+      GroupDescription: Allow HTTP.
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+          
+          
+  ALB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: ALB
+      Scheme: internet-facing
+      SecurityGroups:
+        - !Ref SecurityGroup
+      Subnets:
+        - !Ref PublicSubnet1
+        - !Ref PublicSubnet2
+      Type: application
+      
+  ALBTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      VpcId: !Ref VPC
+      Name: ALBTargetGroup
+      Protocol: HTTP
+      Port: 80
+      HealthCheckProtocol: HTTP
+      HealthCheckPath: /
+      HealthCheckPort: traffic-port
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 2
+      HealthCheckTimeoutSeconds: 5
+      HealthCheckIntervalSeconds: 10
+      Matcher: 
+        HttpCode: 200
+      Targets:
+        - Id: !Ref Instance1
+        - Id: !Ref Instance2
+        
+  ALBListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties: 
+      DefaultActions: 
+        - TargetGroupArn: !Ref ALBTargetGroup
+          Type: forward
+      LoadBalancerArn: !Ref ALB
+      Port: 80
+      Protocol: HTTP
+      
+      
+  PublicS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref DomainName
+      AccessControl: Private
+      WebsiteConfiguration:
+        IndexDocument: index.html
+      
+  S3BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref PublicS3Bucket
+      PolicyDocument:
+        Statement:
+          Action:
+            - s3:GetObject
+          Effect: Allow
+          Resource: !Sub arn:aws:s3:::${DomainName}/* 
+          Principal: "*"
+      
+      
+DnsHealthCheck:
+    Type: AWS::Route53::HealthCheck
+    Properties:
+      HealthCheckConfig:
+        Port: 80
+        Type: HTTP
+        ResourcePath: /
+        FullyQualifiedDomainName: !GetAtt ALB.DNSName
+        RequestInterval: 30
+        FailureThreshold: 3
+
+  AwstutNetDnsRecordGroup:
+    Type: AWS::Route53::RecordSetGroup
+    Properties:
+      HostedZoneName: !Sub ${DomainName}. 
+      RecordSets:
+        - Name: !Ref DomainName
+          Failover: PRIMARY
+          HealthCheckId: !Ref ALBDnsHealthCheck
+          SetIdentifier: primary
+          Type: A
+          AliasTarget: 
+            DNSName: !GetAtt ALB.DNSName
+            EvaluateTargetHealth: true
+            HostedZoneId: Z14GRHDCWA56QT
+  
+        - Name: !Ref DomainName
+          Failover: SECONDARY
+          SetIdentifier: secondary
+          Type: A
+          AliasTarget: 
+            DNSName: s3-website-ap-northeast-1.amazonaws.com
+            HostedZoneId: Z2M4EHUR26P7ZW
