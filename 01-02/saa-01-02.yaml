@@ -49,6 +49,12 @@ Resources:
       SubnetId: !Ref PublicSubnet
       RouteTableId: !Ref RouteTable
 
+
+  PlacementGroup:
+    Type: AWS::EC2::PlacementGroup
+    Properties:
+      Strategy: cluster
+
   Instance1:
     Type: AWS::EC2::Instance
     Properties:
@@ -107,8 +113,3 @@ Resources:
           FromPort: 5001
           ToPort: 5001
           CidrIp: 0.0.0.0/0
-        
-  PlacementGroup:
-    Type: AWS::EC2::PlacementGroup
-    Properties:
-      Strategy: cluster
