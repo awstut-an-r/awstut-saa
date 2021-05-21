@@ -1,0 +1,43 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Resources:
+  AwstutS3Bucket1:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: awstut-s3-bucket1
+      AccelerateConfiguration:
+        AccelerationStatus: Enabled
+      AccessControl: Private
+      
+  AwstutS3Bucket2:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: awstut-s3-bucket2
+      AccelerateConfiguration:
+        AccelerationStatus: Suspended
+      AccessControl: Private
+      
+  S3BucketPolicy1:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref AwstutS3Bucket1
+      PolicyDocument:
+        Statement:
+          Action:
+            - s3:GetObject
+            - s3:PutObject
+          Effect: Allow
+          Resource: arn:aws:s3:::awstut-s3-bucket1/*
+          Principal: "*"
+
+  S3BucketPolicy2:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref AwstutS3Bucket2
+      PolicyDocument:
+        Statement:
+          Action:
+            - s3:GetObject
+            - s3:PutObject
+          Effect: Allow
+          Resource: arn:aws:s3:::awstut-s3-bucket2/*
+          Principal: "*"
