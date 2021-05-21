@@ -1,0 +1,40 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Parameters:
+  Prefix:
+    Type: String
+    Default: saa-03-04
+
+
+Resources:
+  Table:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: datetime
+          AttributeType: S
+      TableName: !Sub ${Prefix}-table
+      KeySchema:
+        - AttributeName: datetime
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+
+  DynamoDBEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal: '*'
+            Action:
+              - dynamodb:*
+            Resource:
+              - !GetAtt Table.Arn
+      RouteTableIds:
+        - Fn::ImportValue: !Sub ${Prefix}-PrivateRouteTable
+      ServiceName: !Sub com.amazonaws.${AWS::Region}.dynamodb
+      VpcId:
+        Fn::ImportValue: !Sub ${Prefix}-VPC
