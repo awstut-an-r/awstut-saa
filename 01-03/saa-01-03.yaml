@@ -23,7 +23,7 @@ Resources:
         AccelerationStatus: Suspended
       AccessControl: Private
       
-  S3BucketPolicy1:
+  BucketPolicy1:
     Type: AWS::S3::BucketPolicy
     Properties:
       Bucket: !Ref Bucket1
@@ -36,7 +36,7 @@ Resources:
           Resource: !Sub arn:aws:s3:::${Bucket1}/*
           Principal: "*"
 
-  S3BucketPolicy2:
+  BucketPolicy2:
     Type: AWS::S3::BucketPolicy
     Properties:
       Bucket: !Ref Bucket2
