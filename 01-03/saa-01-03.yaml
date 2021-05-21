@@ -15,14 +15,6 @@ Resources:
         AccelerationStatus: Enabled
       AccessControl: Private
       
-  Bucket2:
-    Type: AWS::S3::Bucket
-    Properties:
-      BucketName: !Sub ${Prefix}-bucket2
-      AccelerateConfiguration:
-        AccelerationStatus: Suspended
-      AccessControl: Private
-      
   BucketPolicy1:
     Type: AWS::S3::BucketPolicy
     Properties:
@@ -34,17 +26,4 @@ Resources:
             - s3:PutObject
           Effect: Allow
           Resource: !Sub arn:aws:s3:::${Bucket1}/*
-          Principal: "*"
-
-  BucketPolicy2:
-    Type: AWS::S3::BucketPolicy
-    Properties:
-      Bucket: !Ref Bucket2
-      PolicyDocument:
-        Statement:
-          Action:
-            - s3:GetObject
-            - s3:PutObject
-          Effect: Allow
-          Resource: !Sub arn:aws:s3:::${Bucket2}/*
           Principal: "*"
