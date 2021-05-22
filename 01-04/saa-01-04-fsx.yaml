@@ -1,0 +1,23 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Parameters:
+  Prefix:
+    Type: String
+    Default: saa-01-04
+    
+
+Resources:
+  FSxForWindows:
+    Type: AWS::FSx::FileSystem
+    Properties: 
+      FileSystemType: WINDOWS
+      SecurityGroupIds: 
+        - Fn::ImportValue: !Sub ${Prefix}-SecurityGroup
+      StorageCapacity: 32
+      StorageType: SSD
+      SubnetIds: 
+        - Fn::ImportValue: !Sub ${Prefix}-PublicSubnet
+      WindowsConfiguration: 
+        ActiveDirectoryId:
+          Fn::ImportValue: !Sub ${Prefix}-MSAD
+        ThroughputCapacity: 8
