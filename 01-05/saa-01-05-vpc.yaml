@@ -3,7 +3,7 @@ AWSTemplateFormatVersion: "2010-09-09"
 Parameters:
   Prefix:
     Type: String
-    Default: saa-01-04
+    Default: saa-01-05
     
   AZ1:
     Type: String
@@ -13,7 +13,7 @@ Parameters:
     Type: String
     Default: ap-northeast-1c
     
-    
+
 Resources:
   VPC:
     Type: AWS::EC2::VPC
@@ -28,6 +28,17 @@ Resources:
     Properties:
       VpcId: !Ref VPC
       InternetGatewayId: !Ref IGW
+      
+  EIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+          
+  NATGateway:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt EIP.AllocationId
+      SubnetId: !Ref PublicSubnet
 
   PublicSubnet:
     Type: AWS::EC2::Subnet
@@ -43,7 +54,12 @@ Resources:
       VpcId: !Ref VPC
       AvailabilityZone: !Ref AZ2
 
-  RouteTable:
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      
+  PrivateRouteTable:
     Type: AWS::EC2::RouteTable
     Properties:
       VpcId: !Ref VPC
@@ -51,7 +67,7 @@ Resources:
   RouteToInternet:
     Type: AWS::EC2::Route
     Properties:
-      RouteTableId: !Ref RouteTable
+      RouteTableId: !Ref PublicRouteTable
       DestinationCidrBlock: 0.0.0.0/0
       GatewayId: !Ref IGW
 
@@ -59,8 +75,20 @@ Resources:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       SubnetId: !Ref PublicSubnet
-      RouteTableId: !Ref RouteTable
+      RouteTableId: !Ref PublicRouteTable
 
+  RouteToNATGateway:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NATGateway
+
+  PrivateSubnetPrivateRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet
+      RouteTableId: !Ref PrivateRouteTable
 
 Outputs:
   VPC:
