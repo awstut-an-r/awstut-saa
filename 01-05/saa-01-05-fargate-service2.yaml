@@ -1,0 +1,115 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Parameters:
+  Prefix:
+    Type: String
+    Default: saa-01-05
+    
+  ServiceName:
+    Type: String
+    Default: service2
+    
+
+Resources:
+  Service2LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties: 
+      LogGroupName: !Sub ${Prefix}-${ServiceName}
+
+  Service2Cluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Sub ${Prefix}-${ServiceName}-Cluster
+      
+  Service2TaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      RequiresCompatibilities:
+        - FARGATE
+      Cpu: 512
+      Memory: 1024
+      NetworkMode: awsvpc
+      ExecutionRoleArn:
+        Fn::ImportValue: !Sub ${Prefix}-ServiceTaskExecutionRole
+      TaskRoleArn:
+        Fn::ImportValue: !Sub ${Prefix}-ServiceTaskExecutionRole
+      ContainerDefinitions:
+        - Name: !Sub ${Prefix}-${ServiceName}-Container
+          Image: !Sub
+            - ${AccountId}.dkr.ecr.${Region}.amazonaws.com/${RepositoryName}:latest 
+            - AccountId: !Ref AWS::AccountId
+              Region: !Ref AWS::Region
+              RepositoryName:
+                Fn::ImportValue: !Sub ${Prefix}-Service2RepositoryName
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref Service2LogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: app
+          Environment:
+            - Name: QueueName
+              Value:
+                Fn::ImportValue: !Sub ${Prefix}-QueueName
+                
+  Service2TaskService:
+    Type: AWS::ECS::Service
+    Properties:
+      Cluster: !Ref Service2Cluster
+      LaunchType: FARGATE
+      DesiredCount: 1
+      TaskDefinition: !Ref Service2TaskDefinition
+      ServiceName: !Sub ${Prefix}-${ServiceName}-Service
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          SecurityGroups:
+            - Fn::ImportValue: !Sub ${Prefix}-SecurityGroup
+          Subnets:
+            - Fn::ImportValue: !Sub ${Prefix}-PrivateSubnet
+            
+  Service2TaskScalingScalableTarget:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Properties:
+      MaxCapacity: 3
+      MinCapacity: 1
+      ResourceId: !Select [5, !Split [":", !Ref Service2TaskService]]
+      ScalableDimension: ecs:service:DesiredCount
+      ServiceNamespace: ecs
+      RoleARN: !GetAtt Service2TaskScalingRole.Arn
+        
+  Service2TaskScalingPolicy:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    DependsOn:
+      - Service2TaskService
+      - Service2TaskScalingScalableTarget
+    Properties: 
+      PolicyName: Service2TaskScalingPolicy
+      PolicyType: TargetTrackingScaling
+      ScalingTargetId: !Ref Service2TaskScalingScalableTarget
+      TargetTrackingScalingPolicyConfiguration: 
+        TargetValue: 3
+        CustomizedMetricSpecification: 
+          Dimensions: 
+            - Name: QueueName
+              Value:
+                Fn::ImportValue: !Sub ${Prefix}-QueueName
+          MetricName: ApproximateNumberOfMessagesVisible
+          Namespace: AWS/SQS
+          Statistic: Average
+          Unit: Count
+        DisableScaleIn: false
+        ScaleInCooldown: 0
+        ScaleOutCooldown: 0
+      
+  Service2TaskScalingRole:
+    Type: AWS::IAM::Role
+    Properties:
+      #RoleName: Service2TaskScalingRole
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceAutoscaleRole
