@@ -1,0 +1,34 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Parameters:
+  Prefix:
+    Type: String
+    Default: saa-01-05
+    
+
+Resources:
+  Queue:
+    Type: AWS::SQS::Queue
+    Properties:
+      ReceiveMessageWaitTimeSeconds: 20
+    
+  QueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal: "*"
+            Action:
+             - sqs:SendMessage
+            Resource: "*"
+      Queues:
+        - !Ref Queue
+        
+        
+Outputs:
+  QueueName:
+    Value: !GetAtt Queue.QueueName
+    Export:
+      Name: !Sub ${Prefix}-QueueName
