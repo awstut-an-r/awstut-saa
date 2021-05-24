@@ -1,0 +1,69 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Parameters:
+  Prefix:
+    Type: String
+    Default: saa-01-05
+    
+  ServiceName:
+    Type: String
+    Default: service1
+    
+
+Resources:
+  Service1LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties: 
+      LogGroupName: !Sub ${Prefix}-${ServiceName}
+
+  Service1Cluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Sub ${Prefix}-${ServiceName}-Cluster
+      
+  Service1TaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      RequiresCompatibilities:
+        - FARGATE
+      Cpu: 512
+      Memory: 1024
+      NetworkMode: awsvpc
+      ExecutionRoleArn:
+        Fn::ImportValue: !Sub ${Prefix}-ServiceTaskExecutionRole
+      TaskRoleArn:
+        Fn::ImportValue: !Sub ${Prefix}-ServiceTaskExecutionRole
+      ContainerDefinitions:
+        - Name: !Sub ${Prefix}-${ServiceName}-Container
+          Image: !Sub
+            - ${AccountId}.dkr.ecr.${Region}.amazonaws.com/${RepositoryName}:latest 
+            - AccountId: !Ref AWS::AccountId
+              Region: !Ref AWS::Region
+              RepositoryName:
+                Fn::ImportValue: !Sub ${Prefix}-Service1RepositoryName
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref Service1LogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: app
+          Environment:
+            - Name: QueueName
+              Value:
+                Fn::ImportValue: !Sub ${Prefix}-QueueName
+                
+  Service1TaskService:
+    Type: AWS::ECS::Service
+    Properties:
+      Cluster: !Ref Service1Cluster
+      LaunchType: FARGATE
+      DesiredCount: 1
+      TaskDefinition: !Ref Service1TaskDefinition
+      ServiceName: !Sub ${Prefix}-${ServiceName}-Service
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          SecurityGroups:
+            - Fn::ImportValue: !Sub ${Prefix}-SecurityGroup
+          Subnets:
+            - Fn::ImportValue: !Sub ${Prefix}-PublicSubnet
