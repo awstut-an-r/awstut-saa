@@ -21,7 +21,7 @@ Resources:
           - Effect: Allow
             Principal: "*"
             Action:
-             - sqs:SendMessage
+             - "sqs:*"
             Resource: "*"
       Queues:
         - !Ref Queue
