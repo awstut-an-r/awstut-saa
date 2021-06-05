@@ -1,0 +1,73 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Parameters:
+  Prefix:
+    Type: String
+    Default: saa-03-06
+    
+  DataStreamName:
+    Type: String
+    Default: KinesisDataStream
+    
+  DeliveryStreamName:
+    Type: String
+    Default: KinesisFirehoseDeliveryStream
+
+
+Resources:
+  DataStream:
+    Type: AWS::Kinesis::Stream
+    Properties:
+      Name: !Sub ${Prefix}-${DataStreamName}
+      ShardCount: 2
+
+  FirehoseDeliveryStream:
+    Type: AWS::KinesisFirehose::DeliveryStream
+    Properties:
+      DeliveryStreamName: !Sub ${Prefix}-${DeliveryStreamName}
+      DeliveryStreamType: KinesisStreamAsSource
+      KinesisStreamSourceConfiguration: 
+        KinesisStreamARN: !GetAtt DataStream.Arn
+        RoleARN: !GetAtt KinesisStreamSourceRole.Arn
+      ExtendedS3DestinationConfiguration: 
+        BucketARN:
+          Fn::ImportValue: !Sub ${Prefix}-KinesisFirehoseBucketArn
+        CompressionFormat: UNCOMPRESSED
+        Prefix: firehose/
+        RoleARN: !GetAtt KinesisS3DestinationRole.Arn
+        
+  KinesisStreamSourceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Principal:
+              Service:
+                - firehose.amazonaws.com
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonKinesisFullAccess
+      
+  KinesisS3DestinationRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Principal:
+              Service:
+                - firehose.amazonaws.com
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonKinesisFullAccess
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+        
+        
+Outputs:
+  DataStream:
+    Value: !Ref DataStream
+    Export:
+      Name: !Sub ${Prefix}-DataStream
