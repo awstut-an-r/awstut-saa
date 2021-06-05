@@ -5,38 +5,54 @@ Parameters:
     Type: String
     Default: saa-03-06
     
-  DataStreamName:
-    Type: String
-    Default: KinesisDataStream
-    
-  DeliveryStreamName:
-    Type: String
-    Default: KinesisFirehoseDeliveryStream
-
 
 Resources:
-  DataStream:
-    Type: AWS::Kinesis::Stream
+  DataSourceLambda:
+    Type: AWS::Lambda::Function
     Properties:
-      Name: !Sub ${Prefix}-${DataStreamName}
-      ShardCount: 2
+      Environment:
+        Variables:
+          KINESIS_STREAM_NAME:
+            Fn::ImportValue: !Sub ${Prefix}-DataStream
+      Runtime: python3.8
+      Role: !GetAtt DataSourceLambdaRole.Arn
+      Timeout: 60
+      Handler: index.lambda_handler
+      Code:
+        ZipFile: |
+          import boto3
+          import datetime
+          import json
+          import os
+          import random
+          
+          
+          STREAM_NAME = os.environ['KINESIS_STREAM_NAME']
+          PRODUCT_IDS = ['00001', '00002']
+          LIMIT = 5
+          
+          kinesis = boto3.client('kinesis')
+          
+          
+          def get_data(product_id):
+            return {
+              'EVENT_TIME': datetime.datetime.now().isoformat(),
+              'PRODUCT_ID': product_id,
+              'TEMPERATURE': 20 + round(random.random(), 2)}
+              
+          def generate(stream_name, kinesis_client, limit):
+            for i in range(limit):
+              for product_id in PRODUCT_IDS:
+                data = get_data(product_id)
+                kinesis_client.put_record(
+                  StreamName=stream_name,
+                  Data=json.dumps(data).encode('utf-8'),
+                  PartitionKey=product_id)
 
-  FirehoseDeliveryStream:
-    Type: AWS::KinesisFirehose::DeliveryStream
-    Properties:
-      DeliveryStreamName: !Sub ${Prefix}-${DeliveryStreamName}
-      DeliveryStreamType: KinesisStreamAsSource
-      KinesisStreamSourceConfiguration: 
-        KinesisStreamARN: !GetAtt DataStream.Arn
-        RoleARN: !GetAtt KinesisStreamSourceRole.Arn
-      ExtendedS3DestinationConfiguration: 
-        BucketARN:
-          Fn::ImportValue: !Sub ${Prefix}-KinesisFirehoseBucketArn
-        CompressionFormat: UNCOMPRESSED
-        Prefix: firehose/
-        RoleARN: !GetAtt KinesisS3DestinationRole.Arn
-        
-  KinesisStreamSourceRole:
+          def lambda_handler(event, context):
+            generate(STREAM_NAME, kinesis, LIMIT)
+            
+  DataSourceLambdaRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -46,28 +62,7 @@ Resources:
             Action: sts:AssumeRole
             Principal:
               Service:
-                - firehose.amazonaws.com
+                - lambda.amazonaws.com
       ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/AmazonKinesisFullAccess
-      
-  KinesisS3DestinationRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: Allow
-            Action: sts:AssumeRole
-            Principal:
-              Service:
-                - firehose.amazonaws.com
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AmazonKinesisFullAccess
-        - arn:aws:iam::aws:policy/AmazonS3FullAccess
-        
-        
-Outputs:
-  DataStream:
-    Value: !Ref DataStream
-    Export:
-      Name: !Sub ${Prefix}-DataStream
