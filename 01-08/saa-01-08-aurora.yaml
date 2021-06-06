@@ -1,0 +1,145 @@
+AWSTemplateFormatVersion: 2010-09-09
+Parameters:
+  Prefix:
+    Type: String
+    Default: saa-01-08
+    
+  DBUser:
+    Type: String
+    Default: root
+  
+  DBPassword:
+    Type: String
+    Default: Passw0rd
+    
+  DBName:
+    Type: String
+    Default: testdb
+    
+  DBTableName:
+    Type: String
+    Default: testtable
+    
+  DBEngine:
+    Type: String
+    Default: aurora
+    
+  DBEngineVersion:
+    Type: String
+    Default: 5.6.mysql_aurora.1.23.2
+    
+  DBFamily:
+    Type: String
+    Default: aurora5.6
+    
+  DBInstanceClass:
+    Type: String
+    Default: db.t3.small
+
+
+Resources:
+  DBCluster:
+    Type: AWS::RDS::DBCluster
+    DependsOn:
+      - DBSubnetGroup
+      - DBClusterParameterGroup
+    Properties:
+      DatabaseName: !Ref DBName
+      DBClusterIdentifier: !Sub ${Prefix}-DBCluster
+      DBClusterParameterGroupName: !Ref DBClusterParameterGroup
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      Engine: !Ref DBEngine
+      EngineVersion: !Ref DBEngineVersion
+      MasterUsername: !Ref DBUser # cannot use "-".
+      MasterUserPassword: !Ref DBPassword # cannot use "/@'"
+      StorageEncrypted: true
+      VpcSecurityGroupIds:
+        - Fn::ImportValue: !Sub ${Prefix}-DBSecurityGroup
+      
+  DBInstance1:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBClusterIdentifier: !Ref DBCluster
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      DBParameterGroupName: !Ref DBParameterGroup
+      DBInstanceIdentifier: !Sub ${Prefix}-DBInstance1
+      DBInstanceClass: !Ref DBInstanceClass
+      Engine: !Ref DBEngine
+      AvailabilityZone:
+        Fn::ImportValue: !Sub ${Prefix}-AZ1
+      PubliclyAccessible: false
+      PromotionTier: 1
+      
+  DBInstance2:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBClusterIdentifier: !Ref DBCluster
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      DBParameterGroupName: !Ref DBParameterGroup
+      DBInstanceIdentifier: !Sub ${Prefix}-DBInstance2
+      DBInstanceClass: !Ref DBInstanceClass
+      Engine: !Ref DBEngine
+      AvailabilityZone:
+        Fn::ImportValue: !Sub ${Prefix}-AZ2
+      PubliclyAccessible: false
+      PromotionTier: 2
+      
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupName: !Sub ${Prefix}-dbsubnetgroup # must be lowercase alphanumeric characters or hyphens.
+      DBSubnetGroupDescription: Test DBSubnetGroup for Aurora.
+      SubnetIds:
+        - Fn::ImportValue: !Sub ${Prefix}-PrivateSubnet1
+        - Fn::ImportValue: !Sub ${Prefix}-PrivateSubnet2
+    
+  DBClusterParameterGroup:
+    Type: AWS::RDS::DBClusterParameterGroup
+    Properties:
+      Description: Test DBClusterParameterGroup for Aurora.
+      Family: !Ref DBFamily
+      Parameters:
+        character_set_database: utf8
+    
+  DBParameterGroup:
+    Type: AWS::RDS::DBParameterGroup
+    Properties:
+      Description: Test DBParameterGroup for Aurora.
+      Family: !Ref DBFamily
+      
+      
+Outputs:
+  DBUser:
+    Value: !Ref DBUser
+    Export:
+      Name: !Sub ${Prefix}-DBUser
+  
+  DBPassword:
+    Value: !Ref DBPassword
+    Export:
+      Name: !Sub ${Prefix}-DBPassword
+    
+  DBName:
+    Value: !Ref DBName
+    Export:
+      Name: !Sub ${Prefix}-DBName
+    
+  DBTableName:
+    Value: !Ref DBTableName
+    Export:
+      Name: !Sub ${Prefix}-DBTableName
+
+  DBReadEndpointAddress:
+    Value: !GetAtt DBCluster.ReadEndpoint.Address
+    Export:
+      Name: !Sub ${Prefix}-DBReadEndpointAddress
+      
+  DBWriteEndpointAddress:
+    Value: !GetAtt DBCluster.Endpoint.Address
+    Export:
+      Name: !Sub ${Prefix}-DBWriteEndpointAddress
+      
+  DBEndpointPort:
+    Value: !GetAtt DBCluster.Endpoint.Port
+    Export:
+      Name: !Sub ${Prefix}-DBEndpointPort
