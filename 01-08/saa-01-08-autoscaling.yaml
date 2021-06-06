@@ -1,0 +1,173 @@
+AWSTemplateFormatVersion: 2010-09-09
+Parameters:
+  Prefix:
+    Type: String
+    Default: saa-01-08
+    
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Default: MyKeyPair
+    
+  LatestAmiId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+    
+  WebInstanceClass:
+    Type: String
+    Default: t3.nano
+
+
+Resources:
+  LaunchConfiguration:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Metadata:
+      AWS::CloudFormation::Init:
+        config:
+          packages:
+            yum:
+              python3: []
+          files:
+            /home/ec2-user/main.py:
+              content: !Sub
+                - |
+                  import datetime
+                  import json
+                  import os
+                  
+                  from bottle import route, run
+                  import mysql.connector
+                
+                
+                  host_read = '${DBReadEndpointAddress}'
+                  host_write = '${DBWriteEndpointAddress}'
+                  port = ${DBEndpointPort}
+                  user = '${DBUser}'
+                  password = '${DBPassword}'
+                  database = '${DBName}'
+                  table = '${DBTableName}'
+                  bottle_port = ${BottlePort}
+                  
+                  @route('/')
+                  @route('/read')
+                  def read():
+                    conn = mysql.connector.connect(
+                      host=host_read,
+                      port=port,
+                      user=user,
+                      password=password,
+                      database=database
+                      )
+                    
+                    cur = conn.cursor()
+                    
+                    read_sql = 'select * from {tbl};'.format(tbl=table)
+                    cur.execute(read_sql)
+                    content = ' | '.join([record[0].strftime('%Y-%m-%d %H:%M:%S') for record in cur])
+                    
+                    cur.close()
+                    conn.commit()
+                    conn.close()
+                    
+                    return content
+                    
+                  @route('/write')
+                  def write():
+                    conn = mysql.connector.connect(
+                      host=host_write,
+                      port=port,
+                      user=user,
+                      password=password,
+                      database=database
+                      )
+                    
+                    cur = conn.cursor()
+                    
+                    table_sql = 'create table if not exists {db}.{tbl} (dt datetime);'.format(
+                      db=database,
+                      tbl=table
+                      )
+                    cur.execute(table_sql)
+                    
+                    now = datetime.datetime.now()
+                    now_str = now.strftime('%Y-%m-%d %H:%M:%S')
+                    write_sql = 'insert into {tbl} values ("{now}");'.format(
+                      tbl=table,
+                      now=now_str
+                      )
+                    cur.execute(write_sql)
+                    
+                    cur.close()
+                    conn.commit()
+                    conn.close()
+                    
+                    return 'Saved: {now}'.format(now=now_str)
+                    
+                  run(host='0.0.0.0', port=bottle_port)
+                - DBUser:
+                    Fn::ImportValue: !Sub ${Prefix}-DBUser
+                  DBPassword:
+                    Fn::ImportValue: !Sub ${Prefix}-DBPassword
+                  DBName:
+                    Fn::ImportValue: !Sub ${Prefix}-DBName
+                  DBTableName:
+                    Fn::ImportValue: !Sub ${Prefix}-DBTableName
+                  DBReadEndpointAddress:
+                    Fn::ImportValue: !Sub ${Prefix}-DBReadEndpointAddress
+                  DBWriteEndpointAddress:
+                    Fn::ImportValue: !Sub ${Prefix}-DBWriteEndpointAddress
+                  DBEndpointPort:
+                    Fn::ImportValue: !Sub ${Prefix}-DBEndpointPort
+                  BottlePort:
+                    Fn::ImportValue: !Sub ${Prefix}-BottlePort
+              mode: "000644"
+              owner: ec2-user
+              group: ec2-user
+          commands:
+            001pip:
+              command: pip3 install bottle
+            002pip:
+              command: pip3 install mysql-connector-python
+            003python:
+              command: python3 /home/ec2-user/main.py
+    Properties:
+      AssociatePublicIpAddress: true
+      ImageId: !Ref LatestAmiId
+      InstanceType: !Ref WebInstanceClass
+      KeyName: !Ref KeyName
+      LaunchConfigurationName: !Sub ${Prefix}-LaunchConfiguration
+      SecurityGroups: 
+        - Fn::ImportValue: !Sub ${Prefix}-WebSecurityGroup
+      UserData:
+        Fn::Base64:
+          !Sub |
+            #!/bin/bash -xe
+            yum install -y aws-cfn-bootstrap
+            
+            /opt/aws/bin/cfn-init -v \
+            --stack ${AWS::StackName} \
+            --resource LaunchConfiguration \
+            --region ${AWS::Region}
+        
+  AutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      AutoScalingGroupName: !Sub ${Prefix}-AutoScalingGroup
+      DesiredCapacity: 1
+      LaunchConfigurationName: !Ref LaunchConfiguration
+      MaxSize: 2
+      MinSize: 1
+      VPCZoneIdentifier:
+        - Fn::ImportValue: !Sub ${Prefix}-PublicSubnet1
+        - Fn::ImportValue: !Sub ${Prefix}-PublicSubnet2
+      TargetGroupARNs:
+        - Fn::ImportValue: !Sub ${Prefix}-ALBTargetGroup
+        
+  ScalingPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AutoScalingGroupName: !Ref AutoScalingGroup
+      PolicyType: TargetTrackingScaling
+      TargetTrackingConfiguration:
+        PredefinedMetricSpecification:
+          PredefinedMetricType: ASGAverageCPUUtilization
+        TargetValue: 50.0
