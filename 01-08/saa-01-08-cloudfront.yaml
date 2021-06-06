@@ -1,0 +1,98 @@
+AWSTemplateFormatVersion: 2010-09-09
+Parameters:
+  Prefix:
+    Type: String
+    Default: saa-01-08
+    
+  ReadPageCacheTTL:
+    Type: Number
+    Default: 60
+    
+  WritePageCacheTTL:
+    Type: Number
+    Default: 0
+    
+
+Resources:
+  CloudFront:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        DefaultCacheBehavior:
+          AllowedMethods:
+            - GET
+            - HEAD
+          CachedMethods:
+            - GET
+            - HEAD
+          Compress: true
+          ForwardedValues:
+            Cookies:
+              Forward: none
+            QueryString: false
+          TargetOriginId: !Sub
+            - ${Prefix}-${ALBDNSName}
+            - Prefix: !Ref Prefix
+              ALBDNSName:
+                Fn::ImportValue: !Sub ${Prefix}-ALBDNSName
+          ViewerProtocolPolicy: allow-all
+          DefaultTTL: !Ref ReadPageCacheTTL
+          MaxTTL: !Ref ReadPageCacheTTL
+          MinTTL: !Ref ReadPageCacheTTL
+        CacheBehaviors:
+          - AllowedMethods:
+              - GET
+              - HEAD
+            CachedMethods:
+              - GET
+              - HEAD
+            Compress: true
+            ForwardedValues:
+              Cookies:
+                Forward: none
+              QueryString: false
+            PathPattern: /read
+            TargetOriginId: !Sub
+              - ${Prefix}-${ALBDNSName}
+              - Prefix: !Ref Prefix
+                ALBDNSName:
+                  Fn::ImportValue: !Sub ${Prefix}-ALBDNSName
+            ViewerProtocolPolicy: allow-all
+            DefaultTTL: !Ref ReadPageCacheTTL
+            MaxTTL: !Ref ReadPageCacheTTL
+            MinTTL: !Ref ReadPageCacheTTL
+          - AllowedMethods:
+              - GET
+              - HEAD
+            CachedMethods:
+              - GET
+              - HEAD
+            Compress: true
+            ForwardedValues:
+              Cookies:
+                Forward: none
+              QueryString: false
+            PathPattern: /write
+            TargetOriginId: !Sub
+              - ${Prefix}-${ALBDNSName}
+              - Prefix: !Ref Prefix
+                ALBDNSName:
+                  Fn::ImportValue: !Sub ${Prefix}-ALBDNSName
+            ViewerProtocolPolicy: allow-all
+            DefaultTTL: !Ref WritePageCacheTTL
+            MaxTTL: !Ref WritePageCacheTTL
+            MinTTL: !Ref WritePageCacheTTL
+        Enabled: true
+        Origins:
+          - CustomOriginConfig:
+              OriginProtocolPolicy: http-only
+              HTTPPort:
+                Fn::ImportValue: !Sub ${Prefix}-BottlePort
+            DomainName:
+              Fn::ImportValue: !Sub ${Prefix}-ALBDNSName
+            Id: !Sub
+              - ${Prefix}-${ALBDNSName}
+              - Prefix: !Ref Prefix
+                ALBDNSName:
+                  Fn::ImportValue: !Sub ${Prefix}-ALBDNSName
+        PriceClass: PriceClass_All
