@@ -1,0 +1,62 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  Prefix:
+    Type: String
+    Default: saa-02-01
+
+  LatestAmiId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+
+
+Resources:
+  PrivateInstance1:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref LatestAmiId
+      InstanceType: t3.nano
+      NetworkInterfaces:
+        - DeviceIndex: 0
+          SubnetId:
+            Fn::ImportValue: !Sub ${Prefix}-PrivateSubnet1
+          GroupSet:
+            - Fn::ImportValue: !Sub ${Prefix}-PrivateSecurityGroup
+      UserData: !Base64 |
+        #!/bin/bash -xe
+        yum update -y
+        yum install -y httpd
+        systemctl start httpd
+        systemctl enable httpd
+        echo "Hello World form Instance1 in PrivateSubnet1." > /var/www/html/index.html
+        
+  PrivateInstance2:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref LatestAmiId
+      InstanceType: t3.nano
+      NetworkInterfaces:
+        - DeviceIndex: 0
+          SubnetId:
+            Fn::ImportValue: !Sub ${Prefix}-PrivateSubnet2
+          GroupSet:
+            - Fn::ImportValue: !Sub ${Prefix}-PrivateSecurityGroup
+      UserData: !Base64 |
+        #!/bin/bash -xe
+        yum update -y
+        yum install -y httpd
+        systemctl start httpd
+        systemctl enable httpd
+        echo "Hello World form Instance2 in PrivateSubnet2." > /var/www/html/index.html
+        
+        
+Outputs:
+  PrivateInstance1:
+    Value: !Ref PrivateInstance1
+    Export:
+      Name: !Sub ${Prefix}-PrivateInstance1
+      
+  PrivateInstance2:
+    Value: !Ref PrivateInstance2
+    Export:
+      Name: !Sub ${Prefix}-PrivateInstance2
