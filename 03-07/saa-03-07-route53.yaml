@@ -1,0 +1,27 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Parameters:
+  Prefix:
+    Type: String
+    Default: saa-03-07
+    
+  DomainName:
+    Type: String
+    Default: awstut.net
+    
+  HostedZoneId:
+    Type: String
+    Default: Z2FDTNDATAQYW2
+
+
+Resources:
+  DnsRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneName: !Sub ${DomainName}. 
+      Name: !Ref DomainName
+      Type: A
+      AliasTarget: 
+        DNSName:
+          Fn::ImportValue: !Sub ${Prefix}-CloudFrontDistributionDomainName
+        HostedZoneId: !Ref HostedZoneId
