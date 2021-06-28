@@ -1,0 +1,65 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Parameters:
+  Prefix:
+    Type: String
+    Default: saa-03-07
+    
+  DomainName:
+    Type: String
+    Default: awstut.net
+    
+  SSLId:
+    Type: String
+    Default: 2059eaba-9b60-4294-b431-835ec37ac1ed
+    
+
+Resources:
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Aliases:
+          - !Ref DomainName
+        DefaultCacheBehavior:
+          AllowedMethods:
+            - GET
+            - HEAD
+          CachedMethods:
+            - GET
+            - HEAD
+          Compress: true
+          ForwardedValues:
+            Cookies:
+              Forward: none
+            QueryString: false
+          TargetOriginId:
+            Fn::ImportValue: !Sub ${Prefix}-ALBDNSName
+          ViewerProtocolPolicy: redirect-to-https
+          DefaultTTL: 0
+          MaxTTL: 0
+          MinTTL: 0
+        Enabled: true
+        Origins:
+          - CustomOriginConfig:
+              OriginProtocolPolicy: http-only
+            DomainName:
+              Fn::ImportValue: !Sub ${Prefix}-ALBDNSName
+            Id:
+              Fn::ImportValue: !Sub ${Prefix}-ALBDNSName
+        PriceClass: PriceClass_All
+        ViewerCertificate:
+          SslSupportMethod: sni-only
+          AcmCertificateArn: !Sub arn:aws:acm:us-east-1:${AWS::AccountId}:certificate/${SSLId}
+        
+        
+Outputs:
+  CloudFrontDistributionDomainName:
+    Value: !GetAtt CloudFrontDistribution.DomainName
+    Export:
+      Name: !Sub ${Prefix}-CloudFrontDistributionDomainName
+      
+  DomainName:
+    Value: !Ref DomainName
+    Export:
+      Name: !Sub ${Prefix}-DomainName
