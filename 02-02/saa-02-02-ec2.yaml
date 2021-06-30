@@ -1,0 +1,72 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  Prefix:
+    Type: String
+    Default: saa-02-02
+
+  LatestAmiId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+    
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Default: MyKeyPair
+    
+  InstanceType:
+    Type: String
+    Default: t3.nano
+
+
+Resources:
+  PublicInstance1:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref LatestAmiId
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyName
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          SubnetId:
+            Fn::ImportValue: !Sub ${Prefix}-PublicSubnet1
+          GroupSet:
+            - Fn::ImportValue: !Sub ${Prefix}-InstanceSecurityGroup
+      UserData:
+        Fn::Base64: !Sub
+          - |
+            #!/bin/bash -xe
+            yum update -y
+            yum install -y amazon-efs-utils
+            mkdir /mnt/efs
+            sleep 90s
+            mount -t efs ${FileSystemId}:/ /mnt/efs
+            mkdir /mnt/efs/sample
+            echo "Hello World from PublicInstance1" > /mnt/efs/sample/test.txt
+          - FileSystemId:
+              Fn::ImportValue: !Sub ${Prefix}-EFSFileSystemId
+        
+  PublicInstance2:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref LatestAmiId
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyName
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          SubnetId:
+            Fn::ImportValue: !Sub ${Prefix}-PublicSubnet1
+          GroupSet:
+            - Fn::ImportValue: !Sub ${Prefix}-InstanceSecurityGroup
+      UserData:
+        Fn::Base64: !Sub
+          - |
+            #!/bin/bash -xe
+            yum update -y
+            yum install -y amazon-efs-utils
+            mkdir /mnt/efs
+            sleep 90s
+            mount -t efs ${FileSystemId}:/ /mnt/efs
+          - FileSystemId:
+              Fn::ImportValue: !Sub ${Prefix}-EFSFileSystemId
