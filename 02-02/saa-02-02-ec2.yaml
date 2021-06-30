@@ -56,7 +56,7 @@ Resources:
         - AssociatePublicIpAddress: true
           DeviceIndex: 0
           SubnetId:
-            Fn::ImportValue: !Sub ${Prefix}-PublicSubnet1
+            Fn::ImportValue: !Sub ${Prefix}-PublicSubnet2
           GroupSet:
             - Fn::ImportValue: !Sub ${Prefix}-InstanceSecurityGroup
       UserData:
