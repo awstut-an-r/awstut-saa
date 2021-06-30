@@ -1,0 +1,40 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  Prefix:
+    Type: String
+    Default: saa-02-02
+
+
+Resources:
+  EFS:
+    Type: AWS::EFS::FileSystem
+    Properties:
+      Encrypted: true
+      PerformanceMode: generalPurpose
+      ThroughputMode: bursting
+      
+  MoutTarget1:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId: !Ref EFS
+      SubnetId:
+        Fn::ImportValue: !Sub ${Prefix}-PublicSubnet1
+      SecurityGroups:
+        - Fn::ImportValue: !Sub ${Prefix}-EFSSecurityGroup
+        
+  MoutTarget2:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId: !Ref EFS
+      SubnetId:
+        Fn::ImportValue: !Sub ${Prefix}-PublicSubnet2
+      SecurityGroups:
+        - Fn::ImportValue: !Sub ${Prefix}-EFSSecurityGroup
+
+
+Outputs:
+  EFSFileSystemId:
+    Value: !GetAtt EFS.FileSystemId
+    Export:
+      Name: !Sub ${Prefix}-EFSFileSystemId
