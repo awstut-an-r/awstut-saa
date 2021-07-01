@@ -1,0 +1,79 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Parameters:
+  Prefix:
+    Type: String
+    Default: saa-03-08
+    
+  FunctionName:
+    Type: String
+    Default: TestFunction
+    
+  DBTableName:
+    Type: String
+    Default: testtable
+    
+  S3Key:
+    Type: String
+    Default: deploy.zip
+
+
+Resources:
+  Function:
+    Type: AWS::Lambda::Function
+    Properties:
+      Environment:
+        Variables:
+          DB_ENDPOINT_ADDRESS:
+            Fn::ImportValue: !Sub ${Prefix}-DBEndpointAddress
+          DB_ENDPOINT_PORT:
+            Fn::ImportValue: !Sub ${Prefix}-DBEndpointPort
+          DB_USER:
+            Fn::ImportValue: !Sub ${Prefix}-DBUser
+          DB_PASSWORD:
+            Fn::ImportValue: !Sub ${Prefix}-DBPassword
+          DB_NAME:
+            Fn::ImportValue: !Sub ${Prefix}-DBName
+          DB_TABLENAME: !Ref DBTableName
+          DB_PROXY_ENDPOINT_ADDRESS:
+            Fn::ImportValue: !Sub ${Prefix}-DBProxyEndpointAddress
+      Code:
+        S3Bucket:
+          Fn::ImportValue: !Sub ${Prefix}-BucketName
+        S3Key: !Ref S3Key
+      FunctionName: !Sub ${Prefix}-${FunctionName}
+      Handler: index.lambda_handler
+      Runtime: python3.8
+      Role: !GetAtt FunctionRole.Arn
+      Timeout: 10
+      VpcConfig:
+        SecurityGroupIds:
+          - Fn::ImportValue: !Sub ${Prefix}-FunctionSecurityGroup
+        SubnetIds:
+          - Fn::ImportValue: !Sub ${Prefix}-FunctionSubnet
+            
+  FunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+      
+
+Outputs:
+  FunctionName:
+    Value: !Sub ${Prefix}-${FunctionName}
+    Export:
+      Name: !Sub ${Prefix}-FunctionName
+      
+  FunctionArn:
+    Value: !GetAtt Function.Arn
+    Export:
+      Name: !Sub ${Prefix}-FunctionArn
