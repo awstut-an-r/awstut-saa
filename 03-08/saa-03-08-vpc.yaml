@@ -1,0 +1,120 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Parameters:
+  Prefix:
+    Type: String
+    Default: saa-03-08
+    
+  AZ1:
+    Type: String
+    Default: ap-northeast-1a
+    
+  AZ2:
+    Type: String
+    Default: ap-northeast-1c
+
+
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+
+  FunctionSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: 10.0.1.0/24
+      VpcId: !Ref VPC
+      AvailabilityZone: !Ref AZ1
+
+  DBSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: 10.0.2.0/24
+      VpcId: !Ref VPC
+      AvailabilityZone: !Ref AZ1
+      
+  DBSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: 10.0.3.0/24
+      VpcId: !Ref VPC
+      AvailabilityZone: !Ref AZ2
+      
+  FunctionSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${Prefix}-FunctionSecurityGroup
+      GroupDescription: Allow HTTPS.
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+          
+  DBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${Prefix}-DBSecurityGroup
+      GroupDescription: Allow MySQL Only.
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 3306
+          ToPort: 3306
+          SourceSecurityGroupId: !Ref DBProxySecurityGroup
+          
+  DBProxySecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${Prefix}-DBProxySecurityGroup
+      GroupDescription: Security Group for DB Proxy.
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 3306
+          ToPort: 3306
+          SourceSecurityGroupId: !Ref FunctionSecurityGroup
+      
+      
+Outputs:
+  VPC:
+    Value: !Ref VPC
+    Export:
+      Name: !Sub ${Prefix}-VPC
+      
+  LambdaSubnet:
+    Value: !Ref FunctionSubnet
+    Export:
+      Name: !Sub ${Prefix}-FunctionSubnet
+      
+  DBSubnet1:
+    Value: !Ref DBSubnet1
+    Export:
+      Name: !Sub ${Prefix}-DBSubnet1
+      
+  DBSubnet2:
+    Value: !Ref DBSubnet2
+    Export:
+      Name: !Sub ${Prefix}-DBSubnet2
+  
+  AZ1:
+    Value: !Ref AZ1
+    Export:
+      Name: !Sub ${Prefix}-AZ1
+      
+  FunctionSecurityGroup:
+    Value: !Ref FunctionSecurityGroup
+    Export:
+      Name: !Sub ${Prefix}-FunctionSecurityGroup
+  
+  DBSecurityGroup:
+    Value: !Ref DBSecurityGroup
+    Export:
+      Name: !Sub ${Prefix}-DBSecurityGroup
+      
+  DBProxySecurityGroup:
+    Value: !Ref DBProxySecurityGroup
+    Export:
+      Name: !Sub ${Prefix}-DBProxySecurityGroup
