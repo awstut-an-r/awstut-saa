@@ -1,0 +1,30 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Parameters:
+  Prefix:
+    Type: String
+    Default: saa-03-08
+    
+
+Resources:
+  HttpApi:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: !Sub ${Prefix}-HttpApi
+      Description: HttpApi.
+      ProtocolType: HTTP
+      Target: !Sub
+        - arn:aws:apigateway:${Region}:lambda:path/2015-03-31/functions/arn:aws:lambda:${Region}:${AccountId}:function:${FunctionName}/invocations
+        - Region: !Ref AWS::Region
+          AccountId: !Ref AWS::AccountId
+          FunctionName:
+            Fn::ImportValue: !Sub ${Prefix}-FunctionName
+            
+    
+  ApiGatewayLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName:
+        Fn::ImportValue: !Sub ${Prefix}-FunctionArn
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
