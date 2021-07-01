@@ -1,0 +1,25 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Parameters:
+  Prefix:
+    Type: String
+    Default: saa-03-08
+    
+  BucketName:
+    Type: String
+    Default: function-codes
+    
+    
+Resources:
+  KinesisFirehoseBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: Private
+      BucketName: !Sub ${Prefix}-${BucketName}
+
+
+Outputs:
+  BucketName:
+    Value: !Sub ${Prefix}-${BucketName}
+    Export:
+      Name: !Sub ${Prefix}-BucketName
