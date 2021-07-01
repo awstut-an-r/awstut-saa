@@ -1,0 +1,174 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Parameters:
+  Prefix:
+    Type: String
+    Default: saa-03-08
+
+  DBAllocatedStorage:
+    Type: Number
+    Default: 20
+    
+  DBEngine:
+    Type: String
+    Default: mysql
+    
+  DBEngineVersion:
+    Type: String
+    #Default: 8.0.23
+    Default: 5.7.33
+    
+  DBInstanceClass:
+    Type: String
+    Default: db.t3.micro
+    
+  DBName:
+    Type: String
+    Default: testdb
+    
+  DBMasterUsername:
+    Type: String
+    Default: testuser
+    
+  DBMasterUserPassword:
+    Type: String
+    Default: Passw0rd
+
+  DBInstanceIdentifier:
+    Type: String
+    Default: DBInstance
+    
+  DBProxyEngineFamily:
+    Type: String
+    Default: MYSQL
+    
+
+Resources:
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupName: !Sub ${Prefix}-DBSubnetGroup
+      DBSubnetGroupDescription: Test DBSubnetGroup.
+      SubnetIds:
+        - Fn::ImportValue: !Sub ${Prefix}-DBSubnet1
+        - Fn::ImportValue: !Sub ${Prefix}-DBSubnet2
+      
+  DBInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      AllocatedStorage: !Ref DBAllocatedStorage
+      AvailabilityZone:
+        Fn::ImportValue: !Sub ${Prefix}-AZ1
+      DBInstanceClass: !Ref DBInstanceClass
+      DBInstanceIdentifier: !Ref DBInstanceIdentifier
+      DBName: !Ref DBName
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      Engine: !Ref DBEngine
+      EngineVersion: !Ref DBEngineVersion
+      MasterUsername: !Ref DBMasterUsername
+      MasterUserPassword: !Ref DBMasterUserPassword
+      VPCSecurityGroups:
+        - Fn::ImportValue: !Sub ${Prefix}-DBSecurityGroup
+        
+        
+  DBProxy:
+    Type: AWS::RDS::DBProxy
+    Properties:
+      Auth: 
+        - IAMAuth: DISABLED
+          AuthScheme: SECRETS
+          SecretArn: !Ref Secret
+      DBProxyName: !Sub ${Prefix}-DBProxy
+      DebugLogging: true
+      EngineFamily: !Ref DBProxyEngineFamily
+      IdleClientTimeout: 120
+      RequireTLS: false
+      RoleArn: !GetAtt DBProxyRole.Arn
+      VpcSecurityGroupIds: 
+        - Fn::ImportValue: !Sub ${Prefix}-DBProxySecurityGroup
+      VpcSubnetIds: 
+        - Fn::ImportValue: !Sub ${Prefix}-DBSubnet1
+        - Fn::ImportValue: !Sub ${Prefix}-DBSubnet2
+        
+  DBProxyTargetGroup:
+    Type: AWS::RDS::DBProxyTargetGroup
+    Properties:
+      DBProxyName: !Ref DBProxy
+      DBInstanceIdentifiers:
+        - !Ref DBInstance
+      TargetGroupName: default
+      ConnectionPoolConfigurationInfo:
+        MaxConnectionsPercent: 100
+        MaxIdleConnectionsPercent: 50
+        ConnectionBorrowTimeout: 120
+        
+  DBProxyRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Principal:
+              Service:
+                - rds.amazonaws.com
+      Policies:
+        - PolicyName: !Sub ${Prefix}-DBProxyPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: kms:Decrypt
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetResourcePolicy
+                  - secretsmanager:GetSecretValue
+                  - secretsmanager:DescribeSecret
+                  - secretsmanager:ListSecretVersionIds
+                Resource: !Ref SecretAttachment
+        
+  Secret:
+    Type: AWS::SecretsManager::Secret
+    Properties: 
+      Name: !Sub ${Prefix}-Secret
+      SecretString: !Sub '{"username":"${DBMasterUsername}","password":"${DBMasterUserPassword}"}'
+      
+  SecretAttachment:
+    Type: AWS::SecretsManager::SecretTargetAttachment
+    Properties:
+      SecretId: !Ref Secret
+      TargetId: !Ref DBInstance
+      TargetType: AWS::RDS::DBInstance
+
+Outputs:
+  DBEndpointAddress:
+    Value: !GetAtt DBInstance.Endpoint.Address
+    Export:
+      Name: !Sub ${Prefix}-DBEndpointAddress
+      
+  DBEndpointPort:
+    Value: !GetAtt DBInstance.Endpoint.Port
+    Export:
+      Name: !Sub ${Prefix}-DBEndpointPort
+      
+  DBUser:
+    Value: !Ref DBMasterUsername
+    Export:
+      Name: !Sub ${Prefix}-DBUser
+  
+  DBPassword:
+    Value: !Ref DBMasterUserPassword
+    Export:
+      Name: !Sub ${Prefix}-DBPassword
+      
+  DBName:
+    Value: !Ref DBName
+    Export:
+      Name: !Sub ${Prefix}-DBName
+      
+  DBProxyEndpointAddress:
+    Value: !GetAtt DBProxy.Endpoint
+    Export:
+      Name: !Sub ${Prefix}-DBProxyEndpointAddress
