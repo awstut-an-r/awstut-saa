@@ -1,0 +1,247 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  Prefix:
+    Type: String
+    Default: saa-02-03
+    
+  AZ1:
+    Type: String
+    Default: ap-northeast-1a
+    
+  AZ2:
+    Type: String
+    Default: ap-northeast-1c
+    
+  AZ3:
+    Type: String
+    Default: ap-northeast-1d
+    
+  HTTPPort:
+    Type: Number
+    Default: 80
+    
+  BottlePort:
+    Type: Number
+    Default: 8080
+    
+  MySQLPort:
+    Type: Number
+    Default: 3306
+
+
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+
+  IGW:
+    Type: AWS::EC2::InternetGateway
+
+  IGWAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref IGW
+
+  WebSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: 10.0.1.0/24
+      VpcId: !Ref VPC
+      AvailabilityZone: !Ref AZ1
+      
+  NATGatewaySubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: 10.0.2.0/24
+      VpcId: !Ref VPC
+      AvailabilityZone: !Ref AZ3
+  
+      
+  APSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: 10.0.3.0/24
+      VpcId: !Ref VPC
+      AvailabilityZone: !Ref AZ2
+      
+  DBSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: 10.0.4.0/24
+      VpcId: !Ref VPC
+      AvailabilityZone: !Ref AZ3
+      
+  DBSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: 10.0.5.0/24
+      VpcId: !Ref VPC
+      AvailabilityZone: !Ref AZ1
+      
+  DBSubnet3:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: 10.0.6.0/24
+      VpcId: !Ref VPC
+      AvailabilityZone: !Ref AZ2
+
+
+  WebSubnetRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+
+  RouteToInternet:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref WebSubnetRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref IGW
+
+  WebSubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref WebSubnet
+      RouteTableId: !Ref WebSubnetRouteTable
+      
+      
+  EIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+          
+  NATGateway:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt EIP.AllocationId
+      SubnetId: !Ref WebSubnet
+      
+  APSubnetRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+
+  RouteToNATGateway:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref APSubnetRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NATGateway
+
+  APSubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref APSubnet
+      RouteTableId: !Ref APSubnetRouteTable
+      
+      
+  WebSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${Prefix}-WebSecurityGroup
+      GroupDescription: Allow HTTP.
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: !Ref HTTPPort
+          ToPort: !Ref HTTPPort
+          CidrIp: 0.0.0.0/0
+          
+  APSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${Prefix}-APSecurityGroup
+      GroupDescription: Allow HTTP from Web Server.
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: !Ref BottlePort
+          ToPort: !Ref BottlePort
+          SourceSecurityGroupId: !Ref WebSecurityGroup
+
+  DBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${Prefix}-DBSecurityGroup
+      GroupDescription: Allow MySQL from AP Server.
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: !Ref MySQLPort
+          ToPort: !Ref MySQLPort
+          SourceSecurityGroupId: !Ref APSecurityGroup
+          
+          
+Outputs:
+  VPC:
+    Value: !Ref VPC
+    Export:
+      Name: !Sub ${Prefix}-VPC
+      
+  WebSubnet:
+    Value: !Ref WebSubnet
+    Export:
+      Name: !Sub ${Prefix}-WebSubnet
+      
+  APSubnet:
+    Value:  !Ref APSubnet
+    Export:
+      Name: !Sub ${Prefix}-APSubnet
+    
+  DBSubnet1:
+    Value:  !Ref DBSubnet1
+    Export:
+      Name: !Sub ${Prefix}-DBSubnet1
+      
+  DBSubnet2:
+    Value:  !Ref DBSubnet2
+    Export:
+      Name: !Sub ${Prefix}-DBSubnet2
+      
+  DBSubnet3:
+    Value:  !Ref DBSubnet3
+    Export:
+      Name: !Sub ${Prefix}-DBSubnet3
+      
+  WebSecurityGroup:
+    Value: !Ref WebSecurityGroup
+    Export:
+      Name: !Sub ${Prefix}-WebSecurityGroup
+      
+  APSecurityGroup:
+    Value: !Ref APSecurityGroup
+    Export:
+      Name: !Sub ${Prefix}-APSecurityGroup
+      
+  DBSecurityGroup:
+    Value: !Ref DBSecurityGroup
+    Export:
+      Name: !Sub ${Prefix}-DBSecurityGroup
+      
+  AZ1:
+    Value: !Ref AZ1
+    Export:
+      Name: !Sub ${Prefix}-AZ1
+      
+  AZ2:
+    Value: !Ref AZ2
+    Export:
+      Name: !Sub ${Prefix}-AZ2
+      
+  AZ3:
+    Value: !Ref AZ3
+    Export:
+      Name: !Sub ${Prefix}-AZ3
+      
+  HTTPPort:
+    Value: !Ref HTTPPort
+    Export:
+      Name: !Sub ${Prefix}-HTTPPort
+      
+  BottlePort:
+    Value: !Ref BottlePort
+    Export:
+      Name: !Sub ${Prefix}-BottlePort
