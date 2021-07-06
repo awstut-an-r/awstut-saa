@@ -58,7 +58,6 @@ Resources:
       CidrBlock: 10.0.2.0/24
       VpcId: !Ref VPC
       AvailabilityZone: !Ref AZ3
-  
       
   APSubnet:
     Type: AWS::EC2::Subnet
