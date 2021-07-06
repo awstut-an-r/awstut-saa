@@ -1,0 +1,71 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  Prefix:
+    Type: String
+    Default: saa-02-03
+    
+  LatestAmiId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+    
+
+Resources:
+  WebInstance:
+    Metadata:
+      AWS::CloudFormation::Init:
+        configSets:
+          default:
+            - config1
+        config1:
+          files:
+            /etc/nginx/conf.d/default.conf:
+              content: !Sub
+                - |
+                  upstream unit-python {
+                    server ${APInstancePrivateIp}:${BottlePort};
+                  }
+                  server {
+                    listen ${HTTPPort};
+                    server_name localhost;
+                  
+                    location / {
+                      proxy_pass http://unit-python;
+                      proxy_set_header Host $host;
+                    }
+                  }
+                - APInstancePrivateIp:
+                    Fn::ImportValue: !Sub ${Prefix}-APInstancePrivateIp
+                  BottlePort:
+                    Fn::ImportValue: !Sub ${Prefix}-BottlePort
+                  HTTPPort:
+                    Fn::ImportValue: !Sub ${Prefix}-HTTPPort
+              mode: "000644"
+              owner: root
+              group: root
+          commands:
+            001install:
+              command: amazon-linux-extras install nginx1
+            002systemctl:
+              command: systemctl start nginx; systemctl enable nginx
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref LatestAmiId
+      InstanceType: t3.nano
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          SubnetId:
+            Fn::ImportValue: !Sub ${Prefix}-WebSubnet
+          GroupSet:
+            - Fn::ImportValue: !Sub ${Prefix}-WebSecurityGroup
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash -xe
+          yum install -y aws-cfn-bootstrap
+          
+          /opt/aws/bin/cfn-init -v \
+          --stack ${AWS::StackName} \
+          --resource WebInstance \
+          --region ${AWS::Region} \
+          --configsets default
