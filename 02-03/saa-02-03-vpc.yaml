@@ -88,7 +88,6 @@ Resources:
       VpcId: !Ref VPC
       AvailabilityZone: !Ref AZ2
 
-
   WebSubnetRouteTable:
     Type: AWS::EC2::RouteTable
     Properties:
@@ -117,7 +116,7 @@ Resources:
     Type: AWS::EC2::NatGateway
     Properties:
       AllocationId: !GetAtt EIP.AllocationId
-      SubnetId: !Ref WebSubnet
+      SubnetId: !Ref NATGatewaySubnet
       
   APSubnetRouteTable:
     Type: AWS::EC2::RouteTable
