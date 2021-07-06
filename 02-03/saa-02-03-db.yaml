@@ -1,0 +1,153 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  Prefix:
+    Type: String
+    Default: saa-02-03
+    
+  AuroraUser:
+    Type: String
+    Default: root
+  
+  AuroraPassword:
+    Type: String
+    Default: Passw0rd
+    
+  AuroraDatabaseName:
+    Type: String
+    Default: testdb
+    
+  AuroraTableName:
+    Type: String
+    Default: testtable
+    
+  AuroraEngineVersion:
+    Type: String
+    Default: 5.6.mysql_aurora.1.23.2
+    
+  DBEngine:
+    Type: String
+    Default: aurora
+    
+  DBFamily:
+    Type: String
+    Default: aurora5.6
+    
+  DBInstanceClass:
+    Type: String
+    Default: db.t3.small
+
+
+Resources:
+  DBCluster:
+    Type: AWS::RDS::DBCluster
+    Properties:
+      DatabaseName: !Ref AuroraDatabaseName
+      DBClusterIdentifier: !Sub ${Prefix}-DBCluster
+      DBClusterParameterGroupName: !Ref DBClusterParameterGroup
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      Engine: !Ref DBEngine
+      EngineVersion: !Ref AuroraEngineVersion
+      MasterUsername: !Ref AuroraUser
+      MasterUserPassword: !Ref AuroraPassword
+      StorageEncrypted: true
+      VpcSecurityGroupIds:
+        - Fn::ImportValue: !Sub ${Prefix}-DBSecurityGroup
+      
+  DBInstance1:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBClusterIdentifier: !Ref DBCluster
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      DBParameterGroupName: !Ref DBParameterGroup
+      DBInstanceIdentifier: !Sub ${Prefix}-DBInstance1
+      DBInstanceClass: !Ref DBInstanceClass
+      Engine: !Ref DBEngine
+      AvailabilityZone:
+        Fn::ImportValue: !Sub ${Prefix}-AZ3
+      PubliclyAccessible: false
+      PromotionTier: 1
+      
+  DBInstance2:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBClusterIdentifier: !Ref DBCluster
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      DBParameterGroupName: !Ref DBParameterGroup
+      DBInstanceIdentifier: !Sub ${Prefix}-DBInstance2
+      DBInstanceClass: db.t3.small
+      Engine: !Ref DBEngine
+      AvailabilityZone:
+        Fn::ImportValue: !Sub ${Prefix}-AZ2
+      PubliclyAccessible: false
+      PromotionTier: 2
+      
+  DBInstance3:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBClusterIdentifier: !Ref DBCluster
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      DBParameterGroupName: !Ref DBParameterGroup
+      DBInstanceIdentifier: !Sub ${Prefix}-DBInstance3
+      DBInstanceClass: db.t3.small
+      Engine: !Ref DBEngine
+      AvailabilityZone:
+        Fn::ImportValue: !Sub ${Prefix}-AZ1
+      PubliclyAccessible: false
+      PromotionTier: 3
+      
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupName: !Sub ${Prefix}-dbsubnetgroup # cannot use upper case.
+      DBSubnetGroupDescription: DBSubnetGroup for Aurora.
+      SubnetIds:
+        - Fn::ImportValue: !Sub ${Prefix}-DBSubnet1
+        - Fn::ImportValue: !Sub ${Prefix}-DBSubnet2
+        - Fn::ImportValue: !Sub ${Prefix}-DBSubnet3
+    
+  DBClusterParameterGroup:
+    Type: AWS::RDS::DBClusterParameterGroup
+    Properties:
+      Description: DBClusterParameterGroup for Aurora.
+      Family: !Ref DBFamily
+      Parameters:
+        character_set_database: utf8
+    
+  DBParameterGroup:
+    Type: AWS::RDS::DBParameterGroup
+    Properties:
+      Description: DBParameterGroup for Aurora.
+      Family: !Ref DBFamily
+
+
+Outputs:
+  AuroraUser:
+    Value: !Ref AuroraUser
+    Export:
+      Name: !Sub ${Prefix}-AuroraUser
+      
+  AuroraPassword:
+    Value: !Ref AuroraPassword
+    Export:
+      Name: !Sub ${Prefix}-AuroraPassword
+      
+  AuroraDatabaseName:
+    Value: !Ref AuroraDatabaseName
+    Export:
+      Name: !Sub ${Prefix}-AuroraDatabaseName
+      
+  AuroraTableName:
+    Value: !Ref AuroraTableName
+    Export:
+      Name: !Sub ${Prefix}-AuroraTableName
+      
+  AuroraWriteEndpointAddress:
+    Value: !GetAtt DBCluster.Endpoint.Address
+    Export:
+      Name: !Sub ${Prefix}-AuroraWriteEndpointAddress
+      
+  AuroraEndpointPort:
+    Value: !GetAtt DBCluster.Endpoint.Port
+    Export:
+      Name: !Sub ${Prefix}-AuroraEndpointPort
