@@ -1,0 +1,227 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  Prefix:
+    Type: String
+    Default: saa-02-03
+    
+  LatestAmiId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+    
+  AuroraReadCountEndpoint:
+    Type: String
+    
+  AuroraReadRecordsEndpoint:
+    Type: String
+    
+
+Resources:
+  APInstance:
+    Type: AWS::EC2::Instance
+    Metadata:
+      AWS::CloudFormation::Init:
+        configSets:
+          default:
+            - config1
+            - config2
+        config1:
+          files:
+            /etc/yum.repos.d/unit.repo:
+              content: !Sub |
+                [unit]
+                name=unit repo
+                baseurl=https://packages.nginx.org/unit/amzn2/$releasever/$basearch/
+                gpgcheck=0
+                enabled=1
+              mode: "000644"
+              owner: root
+              group: root
+            /tmp/wsgi.py:
+              content: !Sub
+                - |
+                  import boto3
+                  import datetime
+                  import json
+                  import mysql.connector
+                  import os
+                  from bottle import Bottle, template
+                  
+                  REGION = 'ap-northeast-1'
+                  host_write = '${AuroraWriteEndpointAddress}'
+                  port = '${AuroraEndpointPort}'
+                  user = '${AuroraUser}'
+                  password = '${AuroraPassword}'
+                  database = '${AuroraDatabaseName}'
+                  table = '${AuroraTableName}'
+                  host_read_count = '${AuroraReadCountEndpoint}'
+                  host_read_records = 'read-records.cluster-custom-cl50iikpthxs.ap-northeast-1.rds.amazonaws.com'
+                  
+                  app = Bottle()
+                  
+                  @app.route('/')
+                  @app.route('/read/records')
+                  def read_records():
+                    conn = mysql.connector.connect(
+                      host=host_read_records,
+                      port=port,
+                      user=user,
+                      password=password,
+                      database=database
+                      )
+                    cur = conn.cursor()
+                    
+                    read_sql = 'select * from {tbl};'.format(tbl=table)
+                    cur.execute(read_sql)
+                    content = ' | '.join([record[0].strftime('%Y-%m-%d %H:%M:%S') for record in cur])
+                    
+                    cur.close()
+                    conn.commit()
+                    conn.close()
+                    
+                    return content
+                    
+                  @app.route('/read/count')
+                  def read_count():
+                    conn = mysql.connector.connect(
+                      host=host_read_count,
+                      port=port,
+                      user=user,
+                      password=password,
+                      database=database
+                      )
+                    cur = conn.cursor()
+                    
+                    read_sql = 'select count(*) from {tbl};'.format(tbl=table)
+                    cur.execute(read_sql)
+                    content = 'count: {count}.'.format(
+                      count=cur.fetchall()[0][0])
+                    
+                    cur.close()
+                    conn.commit()
+                    conn.close()
+                    
+                    return content
+                    
+                  @app.route('/write')
+                  def write():
+                    conn = mysql.connector.connect(
+                      host=host_write,
+                      port=port,
+                      user=user,
+                      password=password,
+                      database=database
+                      )
+                    
+                    cur = conn.cursor()
+                    
+                    table_sql = 'create table if not exists {db}.{tbl} (dt datetime);'.format(
+                      db=database,
+                      tbl=table
+                      )
+                    cur.execute(table_sql)
+                    
+                    now = datetime.datetime.now()
+                    now_str = now.strftime('%Y-%m-%d %H:%M:%S')
+                    write_sql = 'insert into {tbl} values ("{now}");'.format(
+                      tbl=table,
+                      now=now_str
+                      )
+                    cur.execute(write_sql)
+                    
+                    cur.close()
+                    conn.commit()
+                    conn.close()
+                    
+                    return 'Saved: {now}'.format(now=now_str)
+                - AuroraUser:
+                    Fn::ImportValue: !Sub ${Prefix}-AuroraUser
+                  AuroraPassword:
+                    Fn::ImportValue: !Sub ${Prefix}-AuroraPassword
+                  AuroraDatabaseName:
+                    Fn::ImportValue: !Sub ${Prefix}-AuroraDatabaseName
+                  AuroraTableName:
+                    Fn::ImportValue: !Sub ${Prefix}-AuroraTableName
+                  AuroraWriteEndpointAddress:
+                    Fn::ImportValue: !Sub ${Prefix}-AuroraWriteEndpointAddress
+                  AuroraEndpointPort:
+                    Fn::ImportValue: !Sub ${Prefix}-AuroraEndpointPort
+                  AuroraReadCountEndpoint: !Ref AuroraReadCountEndpoint
+                  AuroraReadRecordsEndpoint: !Ref AuroraReadRecordsEndpoint
+              mode: "000644"
+              owner: ec2-user
+              group: ec2-user
+            /tmp/config.json:
+              content: !Sub
+                - |
+                  {
+                    "listeners": {
+                      "*:${BottlePort}": {
+                        "pass": "applications/bottle"
+                      }
+                    },
+                    "applications": {
+                      "bottle": {
+                        "type": "python 3.7",
+                        "path": "/home/ec2-user/app/",
+                        "home": "/home/ec2-user/app/venv/",
+                        "module": "wsgi",
+                        "callable": "app",
+                        "user": "ec2-user",
+                        "group": "ec2-user"
+                      }
+                    }
+                  }
+                - BottlePort:
+                    Fn::ImportValue: !Sub ${Prefix}-BottlePort
+              mode: "000755"
+              owner: ec2-user
+              group: ec2-user
+        config2:
+          packages:
+            yum:
+              python3: []
+              unit: []
+              unit-devel: []
+              unit-python37: []
+          commands:
+            001systemctl:
+              command: systemctl start unit; systemctl enable unit
+            002mkdir:
+              command: mkdir -p /home/ec2-user/app
+            003mv:
+              command: mv /tmp/config.json /home/ec2-user/app; mv /tmp/wsgi.py /home/ec2-user/app
+            004python:
+              command: python3 -m venv /home/ec2-user/app/venv
+            005venv:
+              command: su - ec2-user; source /home/ec2-user/app/venv/bin/activate; pip3 install boto3 bottle mysql-connector-python; deactivate
+            006chown:
+              command: chown -R unit:unit /home/ec2-user/app
+            007curl:
+              command: curl -X PUT --data-binary @/home/ec2-user/app/config.json --unix-socket /var/run/unit/control.sock http://localhost/config
+    Properties:
+      ImageId: !Ref LatestAmiId
+      InstanceType: t3.nano
+      NetworkInterfaces:
+        - DeviceIndex: 0
+          SubnetId:
+            Fn::ImportValue: !Sub ${Prefix}-APSubnet
+          GroupSet:
+            - Fn::ImportValue: !Sub ${Prefix}-APSecurityGroup
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash -xe
+          yum install -y aws-cfn-bootstrap
+          
+          /opt/aws/bin/cfn-init -v \
+          --stack ${AWS::StackName} \
+          --resource APInstance \
+          --region ${AWS::Region} \
+          --configsets default
+  
+  
+Outputs:
+  APInstancePrivateIp:
+    Value: !GetAtt APInstance.PrivateIp
+    Export:
+      Name: !Sub ${Prefix}-APInstancePrivateIp
