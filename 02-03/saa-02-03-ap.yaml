@@ -55,7 +55,7 @@ Resources:
                   database = '${AuroraDatabaseName}'
                   table = '${AuroraTableName}'
                   host_read_count = '${AuroraReadCountEndpoint}'
-                  host_read_records = 'read-records.cluster-custom-cl50iikpthxs.ap-northeast-1.rds.amazonaws.com'
+                  host_read_records = '${AuroraReadRecordsEndpoint}'
                   
                   app = Bottle()
                   
