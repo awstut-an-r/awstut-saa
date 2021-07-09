@@ -1,0 +1,54 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Parameters:
+  Prefix:
+    Type: String
+    Default: saa-03-09
+
+  StartInstanceScheduleExpression:
+    Type: String
+    Default: cron(0,10,20,30,40,50 * * * ? *)
+    
+  StopInstanceScheduleExpression:
+    Type: String
+    Default: cron(5,15,25,35,45,55 * * * ? *)
+    
+    
+Resources:
+  StartInstanceScheduleRule:
+    Type: AWS::Events::Rule
+    Properties:
+      ScheduleExpression: !Ref StartInstanceScheduleExpression
+      State: ENABLED
+      Targets:
+        - Arn:
+            Fn::ImportValue: !Sub ${Prefix}-StartInstanceFunctionArn
+          Id: !Sub ${Prefix}-StartInstanceScheduleRule
+          
+  StopInstanceScheduleRule:
+    Type: AWS::Events::Rule
+    Properties:
+      ScheduleExpression: !Ref StopInstanceScheduleExpression
+      State: ENABLED
+      Targets:
+        - Arn:
+            Fn::ImportValue: !Sub ${Prefix}-StopInstanceFunctionArn
+          Id: !Sub ${Prefix}-StopInstanceScheduleRule
+          
+  StartInstanceFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName:
+        Fn::ImportValue: !Sub ${Prefix}-StartInstanceFunctionArn
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt StartInstanceScheduleRule.Arn
+      
+  StopInstanceFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName:
+        Fn::ImportValue: !Sub ${Prefix}-StopInstanceFunctionArn
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt StopInstanceScheduleRule.Arn
