@@ -1,0 +1,68 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  Prefix:
+    Type: String
+    Default: saa-02-04
+    
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Default: MyKeyPair
+    
+  LatestAmiId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+    
+  InstanceType:
+    Type: String
+    Default: t3.nano
+
+
+Resources:
+  PublicInstance1:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref LatestAmiId
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyName
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          SubnetId:
+            Fn::ImportValue: !Sub ${Prefix}-PublicSubnet
+          GroupSet:
+            - !Ref InstanceSecurityGroup
+            
+  PublicInstance2:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref LatestAmiId
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyName
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          SubnetId:
+            Fn::ImportValue: !Sub ${Prefix}-PublicSubnet
+          GroupSet:
+            - !Ref InstanceSecurityGroup
+            
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${Prefix}-InstanceSecurityGroup
+      GroupDescription: Allow SSH.
+      VpcId:
+        Fn::ImportValue: !Sub ${Prefix}-VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22 
+          ToPort: 22 
+          CidrIp: 0.0.0.0/0
+          
+          
+Outputs:
+  PublicInstance1:
+    Value: !Ref PublicInstance1
+    Export:
+      Name: !Sub ${Prefix}-PublicInstance1
