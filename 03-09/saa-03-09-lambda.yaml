@@ -1,0 +1,137 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Parameters:
+  Prefix:
+    Type: String
+    Default: saa-03-09
+    
+  FunctionTimeout:
+    Type: Number
+    Default: 60
+    
+
+Resources:
+  StartInstanceFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Environment:
+        Variables:
+          INSTANCE_ID:
+            Fn::ImportValue: !Sub ${Prefix}-Instance
+          REGION: !Ref AWS::Region
+      Code:
+        ZipFile: |
+          import boto3
+          import datetime
+          import json
+          import os
+          
+          region = os.environ['REGION']
+          ec2 = boto3.client('ec2', region_name=region)
+          
+          def lambda_handler(event, context):
+            instance_id = os.environ['INSTANCE_ID']
+            ec2.start_instances(InstanceIds=(instance_id,))
+            
+            now = datetime.datetime.now()
+            now_str = now.strftime('%Y-%m-%d %H:%M:%S')
+            
+            log_text = '{now}: start instance: {instance_id}'.format(
+              now=now_str,
+              instance_id=instance_id)
+              
+            print(log_text)
+            
+            return {
+              'statusCode': 200,
+              'body': json.dumps({'log': log_text})
+            }
+          
+      FunctionName: !Sub ${Prefix}-StartInstance
+      Handler: index.lambda_handler
+      Runtime: python3.8
+      Role: !GetAtt FunctionRole.Arn
+      Timeout: !Ref FunctionTimeout
+      
+  StopInstanceFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Environment:
+        Variables:
+          INSTANCE_ID:
+            Fn::ImportValue: !Sub ${Prefix}-Instance
+          REGION: !Ref AWS::Region
+      Code:
+        ZipFile: |
+          import boto3
+          import datetime
+          import json
+          import os
+          
+          region = os.environ['REGION']
+          ec2 = boto3.client('ec2', region_name=region)
+          
+          def lambda_handler(event, context):
+            instance_id = os.environ['INSTANCE_ID']
+            ec2.stop_instances(InstanceIds=(instance_id,))
+            
+            now = datetime.datetime.now()
+            now_str = now.strftime('%Y-%m-%d %H:%M:%S')
+            
+            log_text = '{now}: stop instance: {instance_id}'.format(
+              now=now_str,
+              instance_id=instance_id)
+              
+            print(log_text)
+            
+            return {
+              'statusCode': 200,
+              'body': json.dumps({'log': log_text})
+            }
+          
+      FunctionName: !Sub ${Prefix}-StopInstance
+      Handler: index.lambda_handler
+      Runtime: python3.8
+      Role: !GetAtt FunctionRole.Arn
+      Timeout: !Ref FunctionTimeout
+      
+  FunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: InstanceStartStopPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ec2:StartInstances
+                  - ec2:StopInstances
+                Resource: !Sub
+                  - arn:aws:ec2:${Region}:${AccountId}:instance/${InstanceId}
+                  - Region: !Ref AWS::Region
+                    AccountId: !Ref AWS::AccountId
+                    InstanceId:
+                      Fn::ImportValue: !Sub ${Prefix}-Instance
+  
+  
+Outputs:
+  StartInstanceFunctionArn:
+    Value: !GetAtt StartInstanceFunction.Arn
+    Export:
+      Name: !Sub ${Prefix}-StartInstanceFunctionArn
+      
+  StopInstanceFunctionArn:
+    Value: !GetAtt StopInstanceFunction.Arn
+    Export:
+      Name: !Sub ${Prefix}-StopInstanceFunctionArn
