@@ -1,0 +1,43 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Parameters:
+  Prefix:
+    Type: String
+    Default: saa-03-09
+    
+  LatestAmiId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+    
+  InstanceType:
+    Type: String
+    Default: t3.nano
+
+
+Resources:
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${Prefix}-SecurityGroup
+      GroupDescription: Deny any.
+      VpcId:
+        Fn::ImportValue: !Sub ${Prefix}-VPC
+          
+  Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref LatestAmiId
+      InstanceType: !Ref InstanceType
+      NetworkInterfaces:
+        - DeviceIndex: 0
+          SubnetId:
+            Fn::ImportValue: !Sub ${Prefix}-PrivateSubnet
+          GroupSet:
+            - !Ref SecurityGroup
+
+
+Outputs:
+  Instance:
+    Value: !Ref Instance
+    Export:
+      Name: !Sub ${Prefix}-Instance
