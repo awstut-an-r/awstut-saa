@@ -1,0 +1,46 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  Prefix:
+    Type: String
+    Default: saa-02-05
+    
+  CacheTTL:
+    Type: Number
+    Default: 3600
+
+
+Resources:
+  Distribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        DefaultCacheBehavior:
+          AllowedMethods:
+            - GET
+            - HEAD
+          CachedMethods:
+            - GET
+            - HEAD
+          Compress: true
+          ForwardedValues:
+            Cookies:
+              Forward: none
+            QueryString: false
+          TargetOriginId:
+            Fn::ImportValue: !Sub ${Prefix}-BucketName
+          ViewerProtocolPolicy: allow-all
+          DefaultTTL: !Ref CacheTTL
+          MaxTTL: !Ref CacheTTL
+          MinTTL: !Ref CacheTTL
+        DefaultRootObject:
+          Fn::ImportValue: !Sub ${Prefix}-IndexDocument
+        Enabled: true
+        Origins:
+          - CustomOriginConfig:
+              OriginProtocolPolicy: http-only
+            DomainName:
+              Fn::ImportValue: !Sub ${Prefix}-DomainName
+            Id:
+              Fn::ImportValue: !Sub ${Prefix}-BucketName
+        PriceClass: PriceClass_All
