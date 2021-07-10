@@ -1,0 +1,53 @@
+AWSTemplateFormatVersion: 2010-09-09
+Parameters:
+  Prefix:
+    Type: String
+    Default: saa-03-10
+    
+  HTTPPort:
+    Type: Number
+    Default: 80
+
+
+Resources:
+  NLB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub ${Prefix}-NLB
+      Scheme: internet-facing
+      Subnets:
+        - Fn::ImportValue: !Sub ${Prefix}-PublicSubnet1
+        - Fn::ImportValue: !Sub ${Prefix}-PublicSubnet2
+      Type: network
+      
+  NLBTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub ${Prefix}-NLBTargetGroup
+      Protocol: TCP
+      Port:
+        Fn::ImportValue: !Sub ${Prefix}-HTTPPort
+      VpcId:
+        Fn::ImportValue: !Sub ${Prefix}-VPC
+      HealthCheckProtocol: TCP
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 2
+      HealthCheckIntervalSeconds: 10
+        
+  NLBListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties: 
+      DefaultActions: 
+        - TargetGroupArn: !Ref NLBTargetGroup
+          Type: forward
+      LoadBalancerArn: !Ref NLB
+      Port:
+        Fn::ImportValue: !Sub ${Prefix}-HTTPPort
+      Protocol: TCP
+
+
+Outputs:
+  NLBTargetGroup:
+    Value: !Ref NLBTargetGroup
+    Export:
+      Name: !Sub ${Prefix}-NLBTargetGroup
