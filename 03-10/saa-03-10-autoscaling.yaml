@@ -1,0 +1,61 @@
+AWSTemplateFormatVersion: 2010-09-09
+Parameters:
+  Prefix:
+    Type: String
+    Default: saa-03-10
+    
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Default: MyKeyPair
+    
+  LatestAmiId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+    
+  InstanceType:
+    Type: String
+    Default: t3.nano
+
+
+Resources:
+  LaunchConfiguration:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Properties:
+      AssociatePublicIpAddress: true
+      ImageId: !Ref LatestAmiId
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyName
+      LaunchConfigurationName: !Sub ${Prefix}-LaunchConfiguration
+      SecurityGroups: 
+        - Fn::ImportValue: !Sub ${Prefix}-WebSecurityGroup
+      UserData: !Base64 |
+        #!/bin/bash -xe
+        yum update -y
+        yum install -y httpd
+        systemctl start httpd
+        systemctl enable httpd
+        ec2-metadata -i > /var/www/html/index.html
+
+  AutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      AutoScalingGroupName: !Sub ${Prefix}-AutoScalingGroup
+      DesiredCapacity: 1
+      LaunchConfigurationName: !Ref LaunchConfiguration
+      MaxSize: 2
+      MinSize: 1
+      VPCZoneIdentifier:
+        - Fn::ImportValue: !Sub ${Prefix}-PublicSubnet1
+        - Fn::ImportValue: !Sub ${Prefix}-PublicSubnet2
+      TargetGroupARNs:
+        - Fn::ImportValue: !Sub ${Prefix}-NLBTargetGroup
+        
+  ScalingPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AutoScalingGroupName: !Ref AutoScalingGroup
+      PolicyType: TargetTrackingScaling
+      TargetTrackingConfiguration:
+        PredefinedMetricSpecification:
+          PredefinedMetricType: ASGAverageCPUUtilization
+        TargetValue: 10.0
