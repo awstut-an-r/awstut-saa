@@ -1,0 +1,94 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  saa-02-06
+
+  Sample SAM Template for saa-02-06
+  
+  
+Parameters:
+  Prefix:
+    Type: String
+    Default: saa-02-06
+    
+  StageName:
+    Type: String
+    Default: prod
+
+Globals:
+  Function:
+    Timeout: 3
+    Environment:
+      Variables:
+        REGION_NAME: ap-northeast-1
+        TABLE_NAME: !Sub ${Prefix}-table
+
+Resources:
+  HttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      StageName: !Ref StageName
+            
+  ReadDynamoDBFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/read-dynamodb/
+      Handler: app1.lambda_handler
+      Role:  !GetAtt FunctionRole.Arn
+      Runtime: python3.8
+      Events:
+        ExplicitApi:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: GET
+            Path: /
+            
+  WriteDynamoDBFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/write-dynamodb/
+      Handler: app2.lambda_handler
+      Role:  !GetAtt FunctionRole.Arn
+      Runtime: python3.8
+      Events:
+        ExplicitApi:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: GET
+            Path: /write
+            
+  FunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
+            
+            
+  Table:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: isOdd
+          AttributeType: S
+        - AttributeName: datetime
+          AttributeType: S
+      TableName: !Sub ${Prefix}-table
+      KeySchema:
+        - AttributeName: isOdd
+          KeyType: HASH
+        - AttributeName: datetime
+          KeyType: RANGE
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
