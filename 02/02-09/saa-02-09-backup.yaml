@@ -1,0 +1,20 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  Prefix:
+    Type: String
+    Default: saa-02-09
+    
+  BucketName:
+    Type: String
+    Default: backup-bucket
+    
+    
+Resources:
+  MainBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: Private
+      BucketName: !Sub ${Prefix}-${BucketName}
+      VersioningConfiguration:
+        Status: Enabled
