@@ -1,0 +1,294 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Parameters:
+  Prefix:
+    Type: String
+    Default: saa-03-01
+    
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Default: MyKeyPair
+    
+  LatestAmiId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+    
+  DBAllocatedStorage:
+    Type: Number
+    Default: 20
+    
+  DBEngine:
+    Type: String
+    Default: postgres
+    
+  DBEngineVersion:
+    Type: Number
+    Default: 13.2
+    
+  DBInstanceClass:
+    Type: String
+    Default: db.t3.micro
+    
+  DBName:
+    Type: String
+    Default: testdb
+    
+  DBMasterUsername:
+    Type: String
+    Default: testuser
+    
+  DBMasterUserPassword:
+    Type: String
+    Default: Passw0rd
+    
+  DBTableName:
+    Type: String
+    Default: testtable
+
+  MasterDBInstanceIdentifier:
+    Type: String
+    Default: MasterDBInstance
+    
+  ReadReplicaDBInstanceIdentifier:
+    Type: String
+    Default: ReadReplicaDBInstance
+    
+    
+Resources:
+  PublicInstance:
+    Type: AWS::EC2::Instance
+    Metadata:
+      AWS::CloudFormation::Init:
+        configSets:
+          default:
+            - config1
+            - config2
+        config1:
+          files:
+            /etc/cfn/cfn-hup.conf:
+              content: !Sub |
+                [main]
+                stack = ${AWS::StackName}
+                region = ${AWS::Region}
+                interval = 1
+              mode: "000400"
+              owner: root
+              group: root
+            /etc/cfn/hooks.d/cfn-auto-reloader.conf:
+              content: !Sub |
+                [cfn-auto-reloader-hook]
+                triggers = post.update
+                path = Resources.PublicInstance.Metadata.AWS::CloudFormation::Init
+                action = /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource PublicInstance --region ${AWS::Region}
+                runas = root
+              mode: "000400"
+              owner: root
+              group: root
+          services:
+            sysvinit:
+              cfn-hup:
+                enabled: true
+                files:
+                  - /etc/cfn/cfn-hup.conf
+                  - /etc/cfn/hooks.d/cfn-auto-reloader.conf
+        config2:
+          packages:
+            yum:
+              python3: []
+              gcc: []
+              postgresql-devel: []
+              python3-devel: []
+          files:
+            /home/ec2-user/main.py:
+              content: !Sub
+                - |
+                  #-*-coding:utf-8-*-
+                  
+                  import datetime
+                  import psycopg2
+                  from psycopg2.extras import DictCursor
+                  
+                  from bottle import route, run
+                  
+                  
+                  write_endpoint_address = '${WriteEndpointAddress}'
+                  write_endpoint_port = '${WriteEndpointPort}'
+                  read_endpoint_address = '${ReadEndpointAddress}'
+                  read_endpoint_port = '${ReadEndpointPort}'
+                  user = '${User}'
+                  password = '${Password}'
+                  database = '${DatabaseName}'
+                  table = '${TableName}'
+                  
+                  
+                  def get_conn(address, port, user, passwd, db):
+                      return psycopg2.connect(
+                          host=address,
+                          port=port,
+                          user=user,
+                          password=passwd,
+                          database=db)
+                  
+                  
+                  @route('/write')
+                  def write():
+                      now = datetime.datetime.now()
+                      now_str = now.strftime('%Y-%m-%d %H:%M:%S')
+                      
+                      with get_conn(
+                              address=write_endpoint_address,
+                              port=write_endpoint_port,
+                              user=user,
+                              passwd=password,
+                              db=database) as conn:
+                          with conn.cursor() as cur:
+                              tbl_sql = 'create table if not exists {tbl} (dt TIMESTAMP);'.format(
+                                  tbl=table)
+                              cur.execute(tbl_sql)
+                              
+                              write_sql = "insert into {tbl} values ('{now}');".format(
+                                  tbl=table,
+                                  now=now_str)
+                              cur.execute(write_sql)
+                              
+                          conn.commit()
+                          return 'Saved: {now}'.format(now=now_str)
+
+                  @route('/')
+                  @route('/read')
+                  def read():
+                      with get_conn(
+                              address=write_endpoint_address,
+                              port=write_endpoint_port,
+                              user=user,
+                              passwd=password,
+                              db=database) as conn:
+                          with conn.cursor() as cur:
+                              read_sql = 'select * from {tbl};'.format(tbl=table)
+                              cur.execute(read_sql)
+                              
+                              content = ' | '.join(
+                                  [record[0].strftime('%Y-%m-%d %H:%M:%S') for record in cur])
+                                  
+                              return content
+                  run(host='0.0.0.0', port=8080)
+                - {
+                    WriteEndpointAddress: !GetAtt MasterDBInstance.Endpoint.Address,
+                    WriteEndpointPort: !GetAtt MasterDBInstance.Endpoint.Port,
+                    ReadEndpointAddress: !GetAtt ReadReplicaDBInstance.Endpoint.Address,
+                    ReadEndpointPort: !GetAtt ReadReplicaDBInstance.Endpoint.Port,
+                    User: !Ref DBMasterUsername,
+                    Password: !Ref DBMasterUserPassword,
+                    DatabaseName: !Ref DBName,
+                    TableName: !Ref DBTableName
+                  }
+              mode: "000644"
+              owner: ec2-user
+              group: ec2-user
+          commands:
+            001pip:
+              command: pip3 install bottle
+            002pip:
+              command: pip3 install psycopg2
+            003python:
+              command: python3 /home/ec2-user/main.py
+    Properties:
+      ImageId: !Ref LatestAmiId
+      InstanceType: t3.nano
+      KeyName: !Ref KeyName
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          SubnetId:
+            Fn::ImportValue: !Sub ${Prefix}-PublicSubnet
+          GroupSet:
+            - !Ref PublicInstanceSecurityGroup
+      UserData:
+        Fn::Base64:
+          !Sub |
+            #!/bin/bash -xe
+            yum install -y aws-cfn-bootstrap
+            
+            /opt/aws/bin/cfn-init -v \
+            --stack ${AWS::StackName} \
+            --resource PublicInstance \
+            --region ${AWS::Region}
+            --configsets default
+            
+  PublicInstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: instance-sg
+      GroupDescription: Allow ICMP, SSH and HTTP(8080).
+      VpcId:
+        Fn::ImportValue: !Sub ${Prefix}-VPC
+      SecurityGroupIngress:
+        - IpProtocol: icmp
+          FromPort: -1
+          ToPort: -1
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 22 
+          ToPort: 22 
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          CidrIp: 0.0.0.0/0
+          
+          
+  DBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: db-sg
+      GroupDescription: Allow PostgreSQL Only.
+      VpcId:
+        Fn::ImportValue: !Sub ${Prefix}-VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          SourceSecurityGroupId: !Ref PublicInstanceSecurityGroup
+            
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupName: dbsubnetgroup
+      DBSubnetGroupDescription: Test DBSubnetGroup for PostgreSQL.
+      SubnetIds:
+        - Fn::ImportValue: !Sub ${Prefix}-PrivateSubnet1
+        - Fn::ImportValue: !Sub ${Prefix}-PrivateSubnet2
+      
+  MasterDBInstance:
+    DependsOn:
+      - DBSecurityGroup
+    Type: AWS::RDS::DBInstance
+    Properties:
+      AllocatedStorage: !Ref DBAllocatedStorage
+      AvailabilityZone:
+        Fn::ImportValue: !Sub ${Prefix}-AZ1
+      DBInstanceClass: !Ref DBInstanceClass
+      DBInstanceIdentifier: !Ref MasterDBInstanceIdentifier
+      DBName: !Ref DBName
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      Engine: !Ref DBEngine
+      EngineVersion: !Ref DBEngineVersion
+      MasterUsername: !Ref DBMasterUsername
+      MasterUserPassword: !Ref DBMasterUserPassword
+      VPCSecurityGroups:
+        - !Ref DBSecurityGroup
+        
+  ReadReplicaDBInstance:
+    DependsOn:
+      - DBSecurityGroup
+      - MasterDBInstance
+    Type: AWS::RDS::DBInstance
+    Properties:
+      AvailabilityZone:
+        Fn::ImportValue: !Sub ${Prefix}-AZ2
+      DBInstanceClass: !Ref DBInstanceClass
+      DBInstanceIdentifier: !Ref ReadReplicaDBInstanceIdentifier
+      SourceDBInstanceIdentifier: !Ref MasterDBInstanceIdentifier
+      SourceRegion: !Ref AWS::Region
+      VPCSecurityGroups:
+        - !Ref DBSecurityGroup
