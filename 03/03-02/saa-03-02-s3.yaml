@@ -1,0 +1,25 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Parameters:
+  Prefix:
+    Type: String
+    Default: saa-03-02
+    
+  BucketName:
+    Type: String
+    Default: fsx-lustre
+    
+    
+Resources:
+  FSxLustreBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: Private
+      BucketName: !Sub ${Prefix}-${BucketName}
+      
+      
+Outputs:
+  BucketName:
+    Value: !Ref FSxLustreBucket
+    Export:
+      Name: !Sub ${Prefix}-FSxLustreBucket
