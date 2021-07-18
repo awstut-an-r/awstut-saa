@@ -1,0 +1,40 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Parameters:
+  Prefix:
+    Type: String
+    Default: saa-03-02
+
+
+Resources:
+  FSxLustre:
+    Type: AWS::FSx::FileSystem
+    Properties:
+      FileSystemType: LUSTRE
+      LustreConfiguration:
+        AutoImportPolicy: NONE
+        DeploymentType: SCRATCH_1
+        ImportPath: !Sub
+          - s3://${BucketName}/
+          - BucketName:
+              Fn::ImportValue: !Sub ${Prefix}-FSxLustreBucket
+      SecurityGroupIds:
+        - !GetAtt FSxLustreSecurityGroup.GroupId
+      StorageCapacity: 1200
+      StorageType: SSD
+      SubnetIds:
+        - Fn::ImportValue: !Sub ${Prefix}-PublicSubnet
+        
+  FSxLustreSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: fsx-lustre-sg
+      GroupDescription: Allow TCP.
+      VpcId:
+        Fn::ImportValue: !Sub ${Prefix}-VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 0 
+          ToPort: 65535 
+          SourceSecurityGroupId:
+            Fn::ImportValue: !Sub ${Prefix}-PublicInstanceSecurityGroup
