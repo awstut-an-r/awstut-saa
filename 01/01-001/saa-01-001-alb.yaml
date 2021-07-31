@@ -1,0 +1,60 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  Prefix:
+    Type: String
+    Default: saa-01-001
+
+
+Resources:
+  ALB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub ${Prefix}-ALB
+      Scheme: internet-facing
+      SecurityGroups:
+        - Fn::ImportValue: !Sub ${Prefix}-ALBSecurityGroup
+      Subnets:
+        - Fn::ImportValue: !Sub ${Prefix}-PublicSubnet1
+        - Fn::ImportValue: !Sub ${Prefix}-PublicSubnet2
+      Type: application
+      
+  ALBTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      VpcId:
+        Fn::ImportValue: !Sub ${Prefix}-VPC
+      Name: !Sub ${Prefix}-ALBTargetGroup
+      Protocol: HTTP
+      Port: 80
+      HealthCheckProtocol: HTTP
+      HealthCheckPath: /
+      HealthCheckPort: traffic-port
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 2
+      HealthCheckTimeoutSeconds: 5
+      HealthCheckIntervalSeconds: 10
+      Matcher: 
+        HttpCode: 200
+      Targets:
+        - Id:
+            Fn::ImportValue: !Sub ${Prefix}-Instance1
+        - Id:
+            Fn::ImportValue: !Sub ${Prefix}-Instance2
+        
+  ALBListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties: 
+      DefaultActions: 
+        - TargetGroupArn: !Ref ALBTargetGroup
+          Type: forward
+      LoadBalancerArn: !Ref ALB
+      Port: 80
+      Protocol: HTTP
+
+
+Outputs:
+  ALBDnsName:
+    Value: !GetAtt ALB.DNSName
+    Export:
+      Name: !Sub ${Prefix}-ALBDnsName
