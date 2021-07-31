@@ -1,0 +1,43 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  Prefix:
+    Type: String
+    Default: saa-01-001
+    
+
+Resources:
+  DnsHealthCheck:
+    Type: AWS::Route53::HealthCheck
+    Properties:
+      HealthCheckConfig:
+        Port: 80
+        Type: HTTP
+        ResourcePath: /
+        FullyQualifiedDomainName:
+          Fn::ImportValue: !Sub ${Prefix}-ALBDnsName
+        RequestInterval: 30
+        FailureThreshold: 3
+
+  AwstutNetDnsRecordGroup:
+    Type: AWS::Route53::RecordSetGroup
+    Properties:
+      HostedZoneName: "{{resolve:ssm:DomainName:1}}."
+      RecordSets:
+        - Name: "{{resolve:ssm:DomainName:1}}"
+          Failover: PRIMARY
+          HealthCheckId: !Ref DnsHealthCheck
+          SetIdentifier: primary
+          Type: A
+          AliasTarget: 
+            DNSName:
+              Fn::ImportValue: !Sub ${Prefix}-ALBDnsName
+            EvaluateTargetHealth: true
+            HostedZoneId: Z14GRHDCWA56QT
+        - Name: "{{resolve:ssm:DomainName:1}}"
+          Failover: SECONDARY
+          SetIdentifier: secondary
+          Type: A
+          AliasTarget: 
+            DNSName: s3-website-ap-northeast-1.amazonaws.com
+            HostedZoneId: Z2M4EHUR26P7ZW
