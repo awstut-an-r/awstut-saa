@@ -1,0 +1,28 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  Prefix:
+    Type: String
+    Default: saa-01-001
+    
+
+Resources:
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: "{{resolve:ssm:DomainName:1}}"
+      AccessControl: Private
+      WebsiteConfiguration:
+        IndexDocument: index.html
+      
+  BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref S3Bucket
+      PolicyDocument:
+        Statement:
+          Action:
+            - s3:GetObject
+          Effect: Allow
+          Resource: arn:aws:s3:::{{resolve:ssm:DomainName:1}}/* 
+          Principal: "*"
