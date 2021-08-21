@@ -1,0 +1,30 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  Prefix:
+    Type: String
+    Default: saa-02-002
+
+
+Resources:
+  Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub ${Prefix}-bucket
+      AccelerateConfiguration:
+        AccelerationStatus: Enabled
+      AccessControl: Private
+
+
+  BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref Bucket
+      PolicyDocument:
+        Statement:
+          Action:
+            - s3:GetObject
+            - s3:PutObject
+          Effect: Allow
+          Resource: !Sub arn:aws:s3:::${Bucket}/*
+          Principal: "*"
