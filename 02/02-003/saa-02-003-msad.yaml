@@ -1,0 +1,36 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  Prefix:
+    Type: String
+    Default: saa-02-003
+    
+  MSADName:
+    Type: String
+    Default: example.com
+    
+  MSADPassword:
+    Type: String
+    Default: P@ssw0rd
+
+
+Resources:
+  MSAD:
+    Type: AWS::DirectoryService::MicrosoftAD
+    Properties: 
+      Edition: Standard
+      Name: !Ref MSADName
+      Password: !Ref MSADPassword
+      VpcSettings: 
+        SubnetIds:
+          - Fn::ImportValue: !Sub ${Prefix}-PrivateSubnet1
+          - Fn::ImportValue: !Sub ${Prefix}-PrivateSubnet2
+        VpcId:
+          Fn::ImportValue: !Sub ${Prefix}-VPC
+
+
+Outputs:
+  MSAD:
+    Value: !Ref MSAD
+    Export:
+      Name: !Sub ${Prefix}-MSAD
