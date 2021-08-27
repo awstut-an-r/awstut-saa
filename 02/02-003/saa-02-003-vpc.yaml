@@ -1,0 +1,108 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  Prefix:
+    Type: String
+    Default: saa-02-003
+    
+  PrivateSubnetCidrBlock1:
+    Type: String
+    Default: 10.0.1.0/24
+    
+  PrivateSubnetCidrBlock2:
+    Type: String
+    Default: 10.0.2.0/24
+    
+  AZ1:
+    Type: String
+    Default: ap-northeast-1a
+    
+  AZ2:
+    Type: String
+    Default: ap-northeast-1c
+
+
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: !Ref PrivateSubnetCidrBlock1
+      VpcId: !Ref VPC
+      AvailabilityZone: !Ref AZ1
+      
+  PrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: !Ref PrivateSubnetCidrBlock2
+      VpcId: !Ref VPC
+      AvailabilityZone: !Ref AZ2
+      
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${Prefix}-InstanceSecurityGroup
+      GroupDescription: Deny All.
+      VpcId: !Ref VPC
+        
+  FSxSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${Prefix}-FSxSecurityGroup
+      GroupDescription: Allow SMB from InstanceSecurityGroup.
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp # allow SMB.
+          FromPort: 445
+          ToPort: 445
+          SourceSecurityGroupId: !Ref InstanceSecurityGroup
+  
+  SSMEndpointSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${Prefix}-EndpointSecurityGroup
+      GroupDescription: Allow HTTPS from InstanceSecurityGroup.
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          SourceSecurityGroupId: !Ref InstanceSecurityGroup
+          
+          
+Outputs:
+  VPC:
+    Value: !Ref VPC
+    Export:
+      Name: !Sub ${Prefix}-VPC
+      
+  PrivateSubnet1:
+    Value: !Ref PrivateSubnet1
+    Export:
+      Name: !Sub ${Prefix}-PrivateSubnet1
+      
+  PrivateSubnet2:
+    Value: !Ref PrivateSubnet2
+    Export:
+      Name: !Sub ${Prefix}-PrivateSubnet2
+      
+  InstanceSecurityGroup:
+    Value: !Ref InstanceSecurityGroup
+    Export:
+      Name: !Sub ${Prefix}-InstanceSecurityGroup
+      
+  FSxSecurityGroup:
+    Value: !Ref FSxSecurityGroup
+    Export:
+      Name: !Sub ${Prefix}-FSxSecurityGroup
+      
+  SSMEndpointSecurityGroup:
+    Value: !Ref SSMEndpointSecurityGroup
+    Export:
+      Name: !Sub ${Prefix}-SSMEndpointSecurityGroup
