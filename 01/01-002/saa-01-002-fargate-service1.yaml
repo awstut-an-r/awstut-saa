@@ -1,0 +1,96 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  Prefix:
+    Type: String
+    Default: saa-01-002
+    
+  ServiceName:
+    Type: String
+    Default: service1
+    
+  ServiceCpu:
+    Type: Number
+    Default: 512
+    
+  ServiceMemory:
+    Type: Number
+    Default: 1024
+    
+
+Resources:
+  Cluster1:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Sub ${Prefix}-${ServiceName}-cluster
+      
+  TaskDefinition1:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      RequiresCompatibilities:
+        - FARGATE
+      Cpu: !Ref ServiceCpu
+      Memory: !Ref ServiceMemory
+      NetworkMode: awsvpc
+      ExecutionRoleArn:
+        Fn::ImportValue: !Sub ${Prefix}-FargateTaskExecutionRole
+      TaskRoleArn: !Ref TaskRole1
+      ContainerDefinitions:
+        - Name: !Sub ${Prefix}-${ServiceName}-container
+          Image: !Sub
+            - ${AccountId}.dkr.ecr.${Region}.amazonaws.com/${RepositoryName}:latest 
+            - AccountId: !Ref AWS::AccountId
+              Region: !Ref AWS::Region
+              RepositoryName:
+                Fn::ImportValue: !Sub ${Prefix}-Service1RepositoryName
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group:
+                Fn::ImportValue: !Sub ${Prefix}-LogGroup1
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: app
+          Environment:
+            - Name: QueueName
+              Value:
+                Fn::ImportValue: !Sub ${Prefix}-QueueName
+                
+  Service1:
+    Type: AWS::ECS::Service
+    Properties:
+      Cluster: !Ref Cluster1
+      LaunchType: FARGATE
+      DesiredCount: 1
+      TaskDefinition: !Ref TaskDefinition1
+      ServiceName: !Sub ${Prefix}-${ServiceName}
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          SecurityGroups:
+            - Fn::ImportValue: !Sub ${Prefix}-ServiceSecurityGroup
+          Subnets:
+            - Fn::ImportValue: !Sub ${Prefix}-PrivateSubnet1
+
+  TaskRole1:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ecs-tasks.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: AllowSQSSendMessage
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sqs:GetQueueUrl
+                  - sqs:SendMessage
+                Resource:
+                  - Fn::ImportValue: !Sub ${Prefix}-QueueArn
