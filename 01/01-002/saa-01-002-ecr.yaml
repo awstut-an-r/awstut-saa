@@ -1,0 +1,77 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  Prefix:
+    Type: String
+    Default: saa-01-002
+    
+
+Resources:
+  Service1Repository:
+    Type: AWS::ECR::Repository
+    Properties: 
+      RepositoryName: !Sub ${Prefix}-service1
+
+  Service2Repository:
+    Type: AWS::ECR::Repository
+    Properties: 
+      RepositoryName: !Sub ${Prefix}-service2
+      
+  ECRDkrEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      PrivateDnsEnabled: true
+      SecurityGroupIds:
+        - Fn::ImportValue: !Sub ${Prefix}-EndpointSecurityGroup
+      ServiceName: !Sub com.amazonaws.${AWS::Region}.ecr.dkr
+      SubnetIds:
+        - Fn::ImportValue: !Sub ${Prefix}-PrivateSubnet1
+        - Fn::ImportValue: !Sub ${Prefix}-PrivateSubnet2
+      VpcEndpointType: Interface
+      VpcId:
+        Fn::ImportValue: !Sub ${Prefix}-VPC
+        
+  ECRApiEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      PrivateDnsEnabled: true
+      SecurityGroupIds:
+        - Fn::ImportValue: !Sub ${Prefix}-EndpointSecurityGroup
+      ServiceName: !Sub com.amazonaws.${AWS::Region}.ecr.api
+      SubnetIds:
+        - Fn::ImportValue: !Sub ${Prefix}-PrivateSubnet1
+        - Fn::ImportValue: !Sub ${Prefix}-PrivateSubnet2
+      VpcEndpointType: Interface
+      VpcId:
+        Fn::ImportValue: !Sub ${Prefix}-VPC
+        
+  S3Endpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal: '*'
+            Action:
+              - s3:*
+            Resource:
+              - !Sub arn:aws:s3:::prod-ap-northeast-1-starport-layer-bucket/*
+      RouteTableIds:
+        - Fn::ImportValue: !Sub ${Prefix}-PrivateRouteTable1
+        - Fn::ImportValue: !Sub ${Prefix}-PrivateRouteTable2
+      ServiceName: !Sub com.amazonaws.${AWS::Region}.s3
+      VpcId:
+        Fn::ImportValue: !Sub ${Prefix}-VPC
+      
+      
+Outputs:
+  Service1RepositoryName:
+    Value: !Ref Service1Repository
+    Export:
+      Name: !Sub ${Prefix}-Service1RepositoryName
+    
+  Service2RepositoryName:
+    Value: !Ref Service2Repository
+    Export:
+      Name: !Sub ${Prefix}-Service2RepositoryName
