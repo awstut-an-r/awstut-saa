@@ -58,8 +58,7 @@ Resources:
             Resource:
               - !Sub arn:aws:s3:::prod-ap-northeast-1-starport-layer-bucket/*
       RouteTableIds:
-        - Fn::ImportValue: !Sub ${Prefix}-PrivateRouteTable1
-        - Fn::ImportValue: !Sub ${Prefix}-PrivateRouteTable2
+        - Fn::ImportValue: !Sub ${Prefix}-PrivateRouteTable
       ServiceName: !Sub com.amazonaws.${AWS::Region}.s3
       VpcId:
         Fn::ImportValue: !Sub ${Prefix}-VPC
