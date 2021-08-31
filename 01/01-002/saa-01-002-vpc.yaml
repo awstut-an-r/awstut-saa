@@ -95,7 +95,7 @@ Outputs:
     Value: !Ref VPC
     Export:
       Name: !Sub ${Prefix}-VPC
-      
+
   PrivateSubnet1:
     Value: !Ref PrivateSubnet1
     Export:
