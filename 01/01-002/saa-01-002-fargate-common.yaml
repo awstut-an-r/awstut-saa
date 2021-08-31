@@ -7,6 +7,11 @@ Parameters:
 
 
 Resources:
+  Cluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Sub ${Prefix}-cluster
+      
   FargateTaskExecutionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -24,6 +29,11 @@ Resources:
         
         
 Outputs:
+  Cluster:
+    Value: !Ref Cluster
+    Export:
+      Name: !Sub ${Prefix}-Cluster
+
   FargateTaskExecutionRole:
     Value: !Ref FargateTaskExecutionRole
     Export:
