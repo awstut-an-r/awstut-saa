@@ -47,28 +47,23 @@ Resources:
       AvailabilityZone: !Ref AZ2
       CidrBlock: !Ref PrivateSubnetCidrBlock2
       VpcId: !Ref VPC
-      
-  PrivateRouteTable1:
+  
+  PrivateRouteTable:
     Type: AWS::EC2::RouteTable
     Properties:
       VpcId: !Ref VPC
-      
-  PrivateRouteTable2:
-    Type: AWS::EC2::RouteTable
-    Properties:
-      VpcId: !Ref VPC
-
-  PrivateSubnet1PrivateRoute1TableAssociation:
+  
+  PrivateSubnet1PrivateRouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       SubnetId: !Ref PrivateSubnet1
-      RouteTableId: !Ref PrivateRouteTable1
+      RouteTableId: !Ref PrivateRouteTable
       
-  PrivateSubnet2PrivateRoute2TableAssociation:
+  PrivateSubnet2PrivateRouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       SubnetId: !Ref PrivateSubnet2
-      RouteTableId: !Ref PrivateRouteTable2
+      RouteTableId: !Ref PrivateRouteTable
       
   ServiceSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -95,7 +90,7 @@ Outputs:
     Value: !Ref VPC
     Export:
       Name: !Sub ${Prefix}-VPC
-
+      
   PrivateSubnet1:
     Value: !Ref PrivateSubnet1
     Export:
@@ -106,15 +101,10 @@ Outputs:
     Export:
       Name: !Sub ${Prefix}-PrivateSubnet2
       
-  PrivateRouteTable1:
-    Value: !Ref PrivateRouteTable1
+  PrivateRouteTable:
+    Value: !Ref PrivateRouteTable
     Export:
-      Name: !Sub ${Prefix}-PrivateRouteTable1
-      
-  PrivateRouteTable2:
-    Value: !Ref PrivateRouteTable2
-    Export:
-      Name: !Sub ${Prefix}-PrivateRouteTable2
+      Name: !Sub ${Prefix}-PrivateRouteTable
       
   ServiceSecurityGroup:
     Value: !Ref ServiceSecurityGroup
