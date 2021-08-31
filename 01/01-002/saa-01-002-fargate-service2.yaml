@@ -19,11 +19,6 @@ Parameters:
     
 
 Resources:
-  Cluster2:
-    Type: AWS::ECS::Cluster
-    Properties:
-      ClusterName: !Sub ${Prefix}-${ServiceName}-cluster
-
   TaskDefinition2:
     Type: AWS::ECS::TaskDefinition
     Properties:
@@ -58,14 +53,14 @@ Resources:
   Service2:
     Type: AWS::ECS::Service
     Properties:
-      Cluster: !Ref Cluster2
+      Cluster:
+        Fn::ImportValue: !Sub ${Prefix}-Cluster
       LaunchType: FARGATE
       DesiredCount: 1
       TaskDefinition: !Ref TaskDefinition2
       ServiceName: !Sub ${Prefix}-${ServiceName}
       NetworkConfiguration:
         AwsvpcConfiguration:
-          AssignPublicIp: ENABLED
           SecurityGroups:
             - Fn::ImportValue: !Sub ${Prefix}-ServiceSecurityGroup
           Subnets:
