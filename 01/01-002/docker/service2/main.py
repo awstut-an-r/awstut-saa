@@ -16,7 +16,6 @@ queue = sqs.get_queue_by_name(QueueName=queue_name)
 def is_even(num):
     if num % 2 == 0:
         return True
-        
     return False
 
 def main():
