@@ -19,7 +19,6 @@ def main():
         now_str = now.strftime('%Y%m%d%H%M%S%f')
         epoch_time = int(time.mktime(now.timetuple()))
         
-        logging.info(now_str)
         logging.info(epoch_time)
         
         messages = [{
