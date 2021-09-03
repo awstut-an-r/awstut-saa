@@ -23,7 +23,6 @@ def main():
         messages = queue.receive_messages(MaxNumberOfMessages=1)
         
         for msg in messages:
-            logging.info(msg.body)
             num = int(msg.body)
             
             if is_even(num):
