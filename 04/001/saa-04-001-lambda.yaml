@@ -1,0 +1,78 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  Prefix:
+    Type: String
+    Default: saa-04-001
+
+
+Resources:
+  DataSourceLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Environment:
+        Variables:
+          KINESIS_STREAM_NAME:
+            Fn::ImportValue: !Sub ${Prefix}-KinesisDataStreamName
+      Runtime: python3.8
+      Role: !GetAtt DataSourceLambdaRole.Arn
+      Timeout: 60
+      Handler: index.lambda_handler
+      Code:
+        # https://docs.aws.amazon.com/ja_jp/streams/latest/dev/get-started-exercise.html
+        ZipFile: |
+          import boto3
+          import base64
+          import datetime
+          import json
+          import os
+          import random
+          
+          STREAM_NAME = os.environ['KINESIS_STREAM_NAME']
+          LIMIT = 100
+          
+          
+          def get_data():
+            return {
+              'EVENT_TIME': datetime.datetime.now().isoformat(),
+              'TICKER': random.choice(['AAPL', 'AMZN', 'MSFT', 'INTC', 'TBV']),
+              'PRICE': round(random.random() * 100, 2)}
+              
+          
+          def generate(stream_name, kinesis_client, limit):
+            for i in range(limit):
+              data = get_data()
+              print(data)
+              kinesis_client.put_record(
+                StreamName=stream_name,
+                Data=json.dumps(data).encode('utf-8'),
+                PartitionKey="partitionkey")
+          
+        
+          def lambda_handler(event, context):
+            generate(STREAM_NAME, boto3.client('kinesis'), LIMIT)
+      
+      
+  DataSourceLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+      Policies:
+        - PolicyName: PutRecordIntoKinesisDataStream
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - kinesis:PutRecord
+                Resource:
+                  - Fn::ImportValue: !Sub ${Prefix}-KinesisDataStreamArn
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
