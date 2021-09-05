@@ -1,0 +1,91 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  Prefix:
+    Type: String
+    Default: saa-04-001
+    
+  NamePrefix:
+    Type: String
+    Default: SAMPLE_APP
+    
+
+Resources:
+  KinesisDataStream:
+    Type: AWS::Kinesis::Stream
+    Properties:
+      Name: KinesisDataStream
+      ShardCount: 1
+      
+      
+  KinesisDataAnalytics:
+    Type: AWS::KinesisAnalytics::Application
+    Properties: 
+      ApplicationName: !Sub ${Prefix}-application
+      ApplicationDescription: sample application.
+      ApplicationCode:
+        !Sub |
+          CREATE OR REPLACE STREAM "DESTINATION_SQL_STREAM" (event_time VARCHAR(20), ticker VARCHAR(5), price REAL);
+          CREATE OR REPLACE PUMP "STREAM_PUMP" AS INSERT INTO "DESTINATION_SQL_STREAM"
+          SELECT STREAM event_time, ticker, price
+          FROM "${NamePrefix}_001"
+          WHERE ticker = 'AAPL';
+      Inputs:
+        - NamePrefix: !Ref NamePrefix
+          InputSchema:
+            RecordColumns:
+              - Name: EVENT_TIME
+                SqlType: VARCHAR(20)
+                Mapping: $.EVENT_TIME
+              - Name: TICKER
+                SqlType: VARCHAR(5)
+                Mapping: $.TICKER
+              - Name: PRICE
+                SqlType: REAL
+                Mapping: $.PRICE
+            RecordFormat:
+              RecordFormatType: JSON
+              MappingParameters:
+                JSONMappingParameters:
+                  RecordRowPath: $
+          KinesisStreamsInput:
+            ResourceARN: !GetAtt KinesisDataStream.Arn
+            RoleARN: !GetAtt KinesisAnalyticsRole.Arn
+        
+        
+  KinesisAnalyticsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: kinesisanalytics.amazonaws.com
+            Action: sts:AssumeRole
+      #Path: /
+      Policies:
+        - PolicyName: ReadInputKinesisDataStream
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - kinesis:DescribeStream
+                  - kinesis:GetShardIterator
+                  - kinesis:GetRecords
+                  - kinesis:ListShards
+                Resource:
+                  - !GetAtt KinesisDataStream.Arn
+
+
+Outputs:
+  KinesisDataStreamName:
+    Value: !Ref KinesisDataStream
+    Export:
+      Name: !Sub ${Prefix}-KinesisDataStreamName
+      
+  KinesisDataStreamArn:
+    Value: !GetAtt KinesisDataStream.Arn
+    Export:
+      Name: !Sub ${Prefix}-KinesisDataStreamArn
