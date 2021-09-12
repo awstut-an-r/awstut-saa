@@ -25,7 +25,6 @@ Resources:
   LaunchConfiguration:
     Type: AWS::AutoScaling::LaunchConfiguration
     Properties:
-      #AssociatePublicIpAddress: true
       ImageId: !Ref LatestAmiId
       InstanceType: !Ref InstanceType
       LaunchConfigurationName: !Sub ${Prefix}-LaunchConfiguration
