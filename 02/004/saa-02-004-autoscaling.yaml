@@ -13,11 +13,19 @@ Parameters:
     Type: String
     Default: t3.nano
     
+  ScheduledActionOutRecurrence:
+    Type: String
+    Default: "45 6 * * *"
+    
+  ScheduledActionInRecurrence:
+    Type: String
+    Default: "50 6 * * *"
     
 Resources:
   LaunchConfiguration:
     Type: AWS::AutoScaling::LaunchConfiguration
     Properties:
+      #AssociatePublicIpAddress: true
       ImageId: !Ref LatestAmiId
       InstanceType: !Ref InstanceType
       LaunchConfigurationName: !Sub ${Prefix}-LaunchConfiguration
@@ -51,7 +59,7 @@ Resources:
       AutoScalingGroupName: !Ref AutoScalingGroup
       MaxSize: 2
       MinSize: 2
-      Recurrence: 45 6 * * *
+      Recurrence: !Ref ScheduledActionOutRecurrence
       
   ScheduledActionIn:
     Type: AWS::AutoScaling::ScheduledAction
@@ -59,5 +67,4 @@ Resources:
       AutoScalingGroupName: !Ref AutoScalingGroup
       MaxSize: 1
       MinSize: 1
-      Recurrence: 50 6 * * *
-  
+      Recurrence: !Ref ScheduledActionInRecurrence
