@@ -1,0 +1,30 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  Prefix:
+    Type: String
+    Default: saa-02-005
+
+Resources:
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: Private
+      BucketName: !Sub ${Prefix}-bucket
+      
+  
+Outputs:
+  S3BucketName:
+    Value: !Ref S3Bucket
+    Export:
+      Name: !Sub ${Prefix}-S3BucketName
+      
+  S3BucketArn:
+    Value: !GetAtt S3Bucket.Arn
+    Export:
+      Name: !Sub ${Prefix}-S3BucketArn
+      
+  S3BucketRegionalDomainName:
+    Value: !GetAtt S3Bucket.RegionalDomainName
+    Export:
+      Name: !Sub ${Prefix}-S3BucketRegionalDomainName
