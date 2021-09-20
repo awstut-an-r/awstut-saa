@@ -1,0 +1,54 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  Prefix:
+    Type: String
+    Default: saa-02-005
+    
+  WaitForSuccessTimeoutSeconds:
+    Type: Number
+    Default: 60
+    
+  PlaybookPackageName:
+    Type: String
+    Default: playbook.zip
+
+  PlaybookFileName:
+    Type: String
+    Default: playbook.yml
+    
+
+Resources:
+  SSMAssociation:
+    Type: AWS::SSM::Association
+    Properties:
+      AssociationName: !Sub ${Prefix}-ssm-association
+      Name: AWS-ApplyAnsiblePlaybooks
+      OutputLocation:
+        S3Location:
+          OutputS3BucketName:
+            Fn::ImportValue: !Sub ${Prefix}-S3BucketName
+          OutputS3KeyPrefix: ssm-association-log
+      Parameters:
+        Check:
+          - "False"
+        ExtraVariables:
+          - SSM=True
+        InstallDependencies:
+          - "True"
+        PlaybookFile:
+          - !Ref PlaybookFileName
+        SourceInfo:
+          - !Sub
+              - '{"path": "https://${S3BucketRegionalDomainName}/${PlaybookPackageName}"}'
+              - S3BucketRegionalDomainName:
+                  Fn::ImportValue: !Sub ${Prefix}-S3BucketRegionalDomainName
+        SourceType:
+          - S3
+        Verbose:
+          - -v
+      Targets:
+        - Key: InstanceIds
+          Values:
+            - Fn::ImportValue: !Sub ${Prefix}-Instance
+      WaitForSuccessTimeoutSeconds: !Ref WaitForSuccessTimeoutSeconds
