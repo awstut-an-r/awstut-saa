@@ -1,0 +1,94 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  Prefix:
+    Type: String
+    Default: saa-02-005
+    
+  InstanceType:
+    Type: String
+    Default: t3a.micro
+    
+  LatestAmiId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+
+
+Resources:
+  EIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+      
+  EIPAssociation:
+    Type: AWS::EC2::EIPAssociation
+    Properties:
+      AllocationId: !GetAtt EIP.AllocationId
+      InstanceId: !Ref Instance
+      
+  Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      IamInstanceProfile: !Ref InstanceProfile
+      ImageId: !Ref LatestAmiId
+      InstanceType: !Ref InstanceType
+      NetworkInterfaces:
+        - DeviceIndex: 0
+          SubnetId:
+            Fn::ImportValue: !Sub ${Prefix}-PublicSubnet
+          GroupSet:
+            - Fn::ImportValue: !Sub ${Prefix}-InstanceSecurityGroup
+            
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: /
+      Roles:
+        - !Ref InstanceRole
+
+  InstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+                - ssm.amazonaws.com
+      Policies:
+        - PolicyName: SSMStateManagerPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:PutObjectAcl
+                  - s3:ListBucket
+                Resource:
+                  - !Sub
+                    - ${S3Bucket}
+                    - S3Bucket:
+                        Fn::ImportValue: !Sub ${Prefix}-S3BucketArn
+                  - !Sub
+                    - ${S3Bucket}/*
+                    - S3Bucket:
+                        Fn::ImportValue: !Sub ${Prefix}-S3BucketArn
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+            
+            
+Outputs:
+  Instance:
+    Value: !Ref Instance
+    Export:
+      Name: !Sub ${Prefix}-Instance
+      
+  InstancePublicDnsName:
+    Value: !GetAtt Instance.PublicDnsName
+    Export:
+      Name: !Sub ${Prefix}-InstancePublicDnsName
