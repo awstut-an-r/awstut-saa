@@ -49,28 +49,6 @@ Resources:
               Service:
                 - ec2.amazonaws.com
                 - ssm.amazonaws.com
-      #Policies:
-      #  - PolicyName: SSMStateManagerPolicy
-      #    PolicyDocument:
-      #      Version: 2012-10-17
-      #      Statement:
-      #        - Effect: Allow
-      #          Action:
-      #            - s3:GetObject
-      #            - s3:PutObject
-      #            - s3:PutObjectAcl
-      #            - s3:ListBucket
-      #          Resource:
-      #            #- !Sub
-      #            #  - ${S3Bucket}
-      #            #  - S3Bucket:
-      #            #      Fn::ImportValue: !Sub ${Prefix}-S3BucketArn
-      #            #- !Sub
-      #            #  - ${S3Bucket}/*
-      #            #  - S3Bucket:
-      #            #      Fn::ImportValue: !Sub ${Prefix}-S3BucketArn
-      #            - !Ref PlaybookBucketArn
-      #            - !Sub "${PlaybookBucketArn}/*"
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
         
