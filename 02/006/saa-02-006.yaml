@@ -1,0 +1,130 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  TemplateBucketName:
+    Type: String
+    Default: awstut-bucket
+    
+  #TemplateURLFormat:
+  #  Type: String
+  #  Default: "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-${TemplateSuffix}.yaml"
+    
+  Prefix:
+    Type: String
+    Default: saa-02-006
+    
+  VPCStackTemplateSuffix:
+    Type: String
+    Default: vpc
+    
+  EndpointStackTemplateSuffix:
+    Type: String
+    Default: endpoint
+    
+  EC2StackTemplateSuffix:
+    Type: String
+    Default: ec2
+    
+  SSMStackTemplateSuffix:
+    Type: String
+    Default: ssm
+    
+  AuroraStackTemplateSuffix:
+    Type: String
+    Default: aurora
+  
+  AvailabilityZone1:
+    Type: String
+    Default: a
+    
+  AvailabilityZone2:
+    Type: String
+    Default: d
+    
+  HTTPSPort:
+    Type: Number
+    Default: 443
+    
+  MySQLPort:
+    Type: Number
+    Default: 3306
+    
+
+Resources:
+  VPCStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-${VPCStackTemplateSuffix}.yaml"
+      Parameters:
+        AvailabilityZone1: !Ref AvailabilityZone1
+        AvailabilityZone2: !Ref AvailabilityZone2
+        CidrIp1: 10.0.1.0/24
+        CidrIp2: 10.0.2.0/24
+        CidrIp3: 10.0.3.0/24
+        CidrIp4: 10.0.4.0/24
+        HTTPSPort: !Ref HTTPSPort
+        MySQLPort: !Ref MySQLPort
+        Prefix: !Ref Prefix
+        VPCCidrBlock: 10.0.0.0/16
+
+  EndpointStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn:
+      - VPCStack
+    Properties:
+      TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-${EndpointStackTemplateSuffix}.yaml"
+      Parameters:
+        EndpointSecurityGroup: !GetAtt VPCStack.Outputs.EndpointSecurityGroup
+        Prefix: !Ref Prefix
+        PrivateSubnet1: !GetAtt VPCStack.Outputs.PrivateSubnet1
+        VPC: !GetAtt VPCStack.Outputs.VPC
+        
+  EC2Stack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn:
+      - VPCStack
+      - EndpointStack
+    Properties:
+      TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-${EC2StackTemplateSuffix}.yaml"
+      Parameters:
+        ImageId: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+        InstanceSecurityGroup: !GetAtt VPCStack.Outputs.InstanceSecurityGroup
+        InstanceType: t3a.micro
+        Prefix: !Ref Prefix
+        PrivateSubnet1: !GetAtt VPCStack.Outputs.PrivateSubnet1
+        
+  SSMStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn:
+      #- VPCStack
+      #- EndpointStack
+      - EC2Stack
+    Properties:
+      TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-${SSMStackTemplateSuffix}.yaml"
+      Parameters:
+        Instance: !GetAtt EC2Stack.Outputs.Instance
+        LogBucket: !Ref TemplateBucketName
+        Prefix: !Ref Prefix
+        WaitForSuccessTimeoutSeconds: 300
+        
+  AuroraStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn:
+      - VPCStack
+    Properties:
+      TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-${AuroraStackTemplateSuffix}.yaml"
+      Parameters:
+        AvailabilityZone1: !Ref AvailabilityZone1
+        AvailabilityZone2: !Ref AvailabilityZone2
+        DBUser: root
+        DBPassword: Passw0rd
+        DBName: testdb
+        #DBTableName: testtable
+        DBEngine: aurora-mysql
+        DBEngineVersion: 5.7.mysql_aurora.2.10.0
+        #DBFamily: aurora5.7
+        DBInstanceClass: db.t3.small
+        DBSecurityGroup: !GetAtt VPCStack.Outputs.DBSecurityGroup
+        Prefix: !Ref Prefix
+        PrivateSubnet2: !GetAtt VPCStack.Outputs.PrivateSubnet2
+        PrivateSubnet3: !GetAtt VPCStack.Outputs.PrivateSubnet3
