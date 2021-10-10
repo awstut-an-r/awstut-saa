@@ -5,10 +5,6 @@ Parameters:
     Type: String
     Default: awstut-bucket
     
-  #TemplateURLFormat:
-  #  Type: String
-  #  Default: "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-${TemplateSuffix}.yaml"
-    
   Prefix:
     Type: String
     Default: saa-02-006
@@ -96,8 +92,6 @@ Resources:
   SSMStack:
     Type: AWS::CloudFormation::Stack
     DependsOn:
-      #- VPCStack
-      #- EndpointStack
       - EC2Stack
     Properties:
       TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-${SSMStackTemplateSuffix}.yaml"
@@ -119,10 +113,8 @@ Resources:
         DBUser: root
         DBPassword: Passw0rd
         DBName: testdb
-        #DBTableName: testtable
         DBEngine: aurora-mysql
         DBEngineVersion: 5.7.mysql_aurora.2.10.0
-        #DBFamily: aurora5.7
         DBInstanceClass: db.t3.small
         DBSecurityGroup: !GetAtt VPCStack.Outputs.DBSecurityGroup
         Prefix: !Ref Prefix
