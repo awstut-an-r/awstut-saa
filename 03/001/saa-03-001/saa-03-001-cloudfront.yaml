@@ -1,0 +1,60 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  GeoRestrictionLocation:
+    #Type: List<String>
+    Type: String
+    #Default: JP
+    
+  HTTPPort:
+    Type: Number
+    
+  OriginDomainName:
+    Type: String
+    
+  Prefix:
+    Type: String
+    #Default: saa-02-01
+    
+
+Resources:
+  CloudFront:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        DefaultCacheBehavior:
+          AllowedMethods:
+            - GET
+            - HEAD
+          CachedMethods:
+            - GET
+            - HEAD
+          Compress: true
+          ForwardedValues:
+            Cookies:
+              Forward: none
+            QueryString: false
+          TargetOriginId: !Ref OriginDomainName
+          #  Fn::ImportValue: !Sub ${Prefix}-ALBDNSName
+          ViewerProtocolPolicy: allow-all
+          DefaultTTL: 0
+          MaxTTL: 0
+          MinTTL: 0
+        Enabled: true
+        Origins:
+          - CustomOriginConfig:
+              OriginProtocolPolicy: http-only
+              HTTPPort: !Ref HTTPPort
+              #  Fn::ImportValue: !Sub ${Prefix}-HTTPPort
+            DomainName: !Ref OriginDomainName
+            #  Fn::ImportValue: !Sub ${Prefix}-ALBDNSName
+            Id: !Ref OriginDomainName
+            #  Fn::ImportValue: !Sub ${Prefix}-ALBDNSName
+        PriceClass: PriceClass_All
+        Restrictions:
+          GeoRestriction:
+            #Locations:
+            #  - JP
+            Locations:
+              - !Ref GeoRestrictionLocation
+            RestrictionType: whitelist
