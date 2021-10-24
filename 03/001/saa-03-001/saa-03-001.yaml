@@ -47,7 +47,6 @@ Resources:
       TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-endpoint.yaml"
       Parameters:
         EndpointSecurityGroup: !GetAtt VPCStack.Outputs.EndpointSecurityGroup
-        #PlaybookBucketArn: !Sub "arn:aws:s3:::${TemplateBucketName}/${Prefix}"
         Prefix: !Ref Prefix
         PrivateRouteTable: !GetAtt VPCStack.Outputs.PrivateRouteTable
         PrivateSubnet1: !GetAtt VPCStack.Outputs.PrivateSubnet1
@@ -65,7 +64,6 @@ Resources:
         ImageId: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
         InstanceSecurityGroup: !GetAtt VPCStack.Outputs.InstanceSecurityGroup
         InstanceType: t3a.micro
-        #PlaybookBucketArn: !Sub "arn:aws:s3:::${TemplateBucketName}/${Prefix}"
         Prefix: !Ref Prefix
         PrivateSubnet1: !GetAtt VPCStack.Outputs.PrivateSubnet1
         PrivateSubnet2: !GetAtt VPCStack.Outputs.PrivateSubnet2
@@ -82,38 +80,18 @@ Resources:
         Instance1: !GetAtt EC2Stack.Outputs.Instance1
         Instance2: !GetAtt EC2Stack.Outputs.Instance2
         LogBucketName: !Ref TemplateBucketName
-        #PlaybookBucket: !Ref TemplateBucketName
-        #PlaybookFileName: playbook.yml
-        #PlaybookPackageName: playbook.zip
         Prefix: !Ref Prefix
         WaitForSuccessTimeoutSeconds: 300
-        
-  #ACMStack:
-  #  Type: AWS::CloudFormation::Stack
-  #  Properties:
-  #    TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-acm.yaml"
-  #    Parameters:
-  #      DomainName1: !Ref DomainName1
-  #      DomainName2: !Ref DomainName2
-  #      HostedZoneId1: !Ref HostedZoneId1
-  #      HostedZoneId2: !Ref HostedZoneId2
-  #      Prefix: !Ref Prefix
         
   ALBStack:
     Type: AWS::CloudFormation::Stack
     DependsOn:
       - VPCStack
       - EC2Stack
-      #- ACMStack
     Properties:
       TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-alb.yaml"
       Parameters:
         ALBSecurityGroup: !GetAtt VPCStack.Outputs.ALBSecurityGroup
-        #Certificate1: !GetAtt ACMStack.Outputs.Certificate1
-        #Certificate2: !GetAtt ACMStack.Outputs.Certificate2
-        #DomainName1: !Ref DomainName1
-        #DomainName2: !Ref DomainName2
-        #HTTPSPort: !Ref HTTPSPort
         HTTPPort: !Ref HTTPPort
         Instance1: !GetAtt EC2Stack.Outputs.Instance1
         Instance2: !GetAtt EC2Stack.Outputs.Instance2
@@ -127,23 +105,6 @@ Resources:
         HealthCheckTimeoutSeconds: 5
         HealthCheckIntervalSeconds: 30
         HttpCode: 200
-        
-  #Route53Stack:
-  #  Type: AWS::CloudFormation::Stack
-  #  DependsOn:
-  #    - ACMStack
-  #    - ALBStack
-  #  Properties:
-  #    TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-route53.yaml"
-  #    Parameters:
-  #      ALBDnsName: !GetAtt ALBStack.Outputs.ALBDnsName
-  #      ALBHostedZoneId: !Ref ALBHostedZoneId
-  #      DomainName1: !Ref DomainName1
-  #      DomainName2: !Ref DomainName2
-  #      HTTPSPort: !Ref HTTPSPort
-  #      HostedZoneId1: !Ref HostedZoneId1
-  #      HostedZoneId2: !Ref HostedZoneId2
-  #      Prefix: !Ref Prefix
   
   CloudFrontStack:
     Type: AWS::CloudFormation::Stack
