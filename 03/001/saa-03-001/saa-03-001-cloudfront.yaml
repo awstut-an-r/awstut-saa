@@ -2,9 +2,7 @@ AWSTemplateFormatVersion: 2010-09-09
 
 Parameters:
   GeoRestrictionLocation:
-    #Type: List<String>
     Type: String
-    #Default: JP
     
   HTTPPort:
     Type: Number
@@ -14,7 +12,6 @@ Parameters:
     
   Prefix:
     Type: String
-    #Default: saa-02-01
     
 
 Resources:
@@ -35,7 +32,6 @@ Resources:
               Forward: none
             QueryString: false
           TargetOriginId: !Ref OriginDomainName
-          #  Fn::ImportValue: !Sub ${Prefix}-ALBDNSName
           ViewerProtocolPolicy: allow-all
           DefaultTTL: 0
           MaxTTL: 0
@@ -45,16 +41,11 @@ Resources:
           - CustomOriginConfig:
               OriginProtocolPolicy: http-only
               HTTPPort: !Ref HTTPPort
-              #  Fn::ImportValue: !Sub ${Prefix}-HTTPPort
             DomainName: !Ref OriginDomainName
-            #  Fn::ImportValue: !Sub ${Prefix}-ALBDNSName
             Id: !Ref OriginDomainName
-            #  Fn::ImportValue: !Sub ${Prefix}-ALBDNSName
         PriceClass: PriceClass_All
         Restrictions:
           GeoRestriction:
-            #Locations:
-            #  - JP
             Locations:
               - !Ref GeoRestrictionLocation
             RestrictionType: whitelist
