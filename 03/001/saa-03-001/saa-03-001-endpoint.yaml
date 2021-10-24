@@ -4,9 +4,6 @@ Parameters:
   EndpointSecurityGroup:
     Type: String
 
-  #PlaybookBucketArn:
-  #  Type: String
-    
   Prefix:
     Type: String
     
@@ -37,13 +34,6 @@ Resources:
             Resource:
               - !Sub arn:aws:s3:::amazonlinux.${AWS::Region}.amazonaws.com/*
               - !Sub arn:aws:s3:::amazonlinux-2-repos-${AWS::Region}/*
-          #- Effect: Allow
-          #  Principal: '*'
-          #  Action:
-          #    - s3:*
-          #  Resource:
-          #    - !Ref PlaybookBucketArn
-          #    - !Sub "${PlaybookBucketArn}/*"
       RouteTableIds:
         - !Ref PrivateRouteTable
       ServiceName: !Sub com.amazonaws.${AWS::Region}.s3
