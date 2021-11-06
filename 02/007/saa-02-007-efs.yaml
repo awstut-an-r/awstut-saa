@@ -1,0 +1,44 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  EFSSecurityGroup:
+    Type: String
+    
+  Prefix:
+    Type: String
+    
+  PrivateSubnet1:
+    Type: String
+    
+  PrivateSubnet2:
+    Type: String
+
+
+Resources:
+  EFS:
+    Type: AWS::EFS::FileSystem
+    Properties:
+      Encrypted: true
+      PerformanceMode: generalPurpose
+      ThroughputMode: bursting
+      
+  MountTarget1:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId: !Ref EFS
+      SubnetId: !Ref PrivateSubnet1
+      SecurityGroups:
+        - !Ref EFSSecurityGroup
+        
+  MountTarget2:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId: !Ref EFS
+      SubnetId: !Ref PrivateSubnet2
+      SecurityGroups:
+        - !Ref EFSSecurityGroup
+
+
+Outputs:
+  FileSystemId:
+    Value: !GetAtt EFS.FileSystemId
