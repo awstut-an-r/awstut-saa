@@ -1,9 +1,32 @@
 AWSTemplateFormatVersion: 2010-09-09
 
 Parameters:
+  ALBDnsName:
+    Type: String
+    
+  ALBHostedZoneId:
+    Type: String
+    
+  DomainName:
+    Type: String
+    
+  FailureThreshold:
+    Type: Number
+    
+  RequestInterval:
+    Type: Number
+    
+  HTTPPort:
+    Type: Number
+    
   Prefix:
     Type: String
-    Default: saa-01-001
+    
+  S3DnsName:
+    Type: String
+    
+  S3HostedZoneId:
+    Type: String
     
 
 Resources:
@@ -11,33 +34,41 @@ Resources:
     Type: AWS::Route53::HealthCheck
     Properties:
       HealthCheckConfig:
-        Port: 80
+        Port: !Ref HTTPPort
         Type: HTTP
         ResourcePath: /
-        FullyQualifiedDomainName:
-          Fn::ImportValue: !Sub ${Prefix}-ALBDnsName
-        RequestInterval: 30
-        FailureThreshold: 3
+        FullyQualifiedDomainName: !Ref ALBDnsName
+        RequestInterval: !Ref RequestInterval
+        FailureThreshold: !Ref FailureThreshold
 
   AwstutNetDnsRecordGroup:
     Type: AWS::Route53::RecordSetGroup
     Properties:
-      HostedZoneName: "{{resolve:ssm:DomainName:1}}."
+      # HostedZoneName: "awstut.net."
+      #HostedZoneName: !Sub
+      #  - ${DomainName}.
+      #  - { DomainName: !Ref DomainName }
+      #HostedZoneName: "{{resolve:ssm:DomainName:1}}."
+      HostedZoneName: !Sub "${DomainName}."
       RecordSets:
-        - Name: "{{resolve:ssm:DomainName:1}}"
+        # ALB
+        #- Name: "{{resolve:ssm:DomainName:1}}"
+        - Name: !Ref DomainName
           Failover: PRIMARY
           HealthCheckId: !Ref DnsHealthCheck
           SetIdentifier: primary
           Type: A
           AliasTarget: 
-            DNSName:
-              Fn::ImportValue: !Sub ${Prefix}-ALBDnsName
+            DNSName: !Ref ALBDnsName
             EvaluateTargetHealth: true
-            HostedZoneId: Z14GRHDCWA56QT
-        - Name: "{{resolve:ssm:DomainName:1}}"
+            # HostedZoneId of ap-northeast-1
+            HostedZoneId: !Ref ALBHostedZoneId
+        # S3
+        #- Name: "{{resolve:ssm:DomainName:1}}"
+        - Name: !Ref DomainName
           Failover: SECONDARY
           SetIdentifier: secondary
           Type: A
           AliasTarget: 
-            DNSName: s3-website-ap-northeast-1.amazonaws.com
-            HostedZoneId: Z2M4EHUR26P7ZW
+            DNSName: !Ref S3DnsName
+            HostedZoneId: !Ref S3HostedZoneId

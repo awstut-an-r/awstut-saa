@@ -1,16 +1,18 @@
 AWSTemplateFormatVersion: 2010-09-09
 
 Parameters:
+  DomainName:
+    Type: String
+    
   Prefix:
     Type: String
-    Default: saa-01-001
-    
+
 
 Resources:
   S3Bucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: "{{resolve:ssm:DomainName:1}}"
+      BucketName: !Ref DomainName
       AccessControl: Private
       WebsiteConfiguration:
         IndexDocument: index.html
@@ -24,5 +26,5 @@ Resources:
           Action:
             - s3:GetObject
           Effect: Allow
-          Resource: arn:aws:s3:::{{resolve:ssm:DomainName:1}}/* 
+          Resource: !Sub "arn:aws:s3:::${DomainName}/*"
           Principal: "*"
