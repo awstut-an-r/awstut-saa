@@ -44,15 +44,9 @@ Resources:
   AwstutNetDnsRecordGroup:
     Type: AWS::Route53::RecordSetGroup
     Properties:
-      # HostedZoneName: "awstut.net."
-      #HostedZoneName: !Sub
-      #  - ${DomainName}.
-      #  - { DomainName: !Ref DomainName }
-      #HostedZoneName: "{{resolve:ssm:DomainName:1}}."
       HostedZoneName: !Sub "${DomainName}."
       RecordSets:
         # ALB
-        #- Name: "{{resolve:ssm:DomainName:1}}"
         - Name: !Ref DomainName
           Failover: PRIMARY
           HealthCheckId: !Ref DnsHealthCheck
@@ -61,10 +55,8 @@ Resources:
           AliasTarget: 
             DNSName: !Ref ALBDnsName
             EvaluateTargetHealth: true
-            # HostedZoneId of ap-northeast-1
             HostedZoneId: !Ref ALBHostedZoneId
         # S3
-        #- Name: "{{resolve:ssm:DomainName:1}}"
         - Name: !Ref DomainName
           Failover: SECONDARY
           SetIdentifier: secondary
