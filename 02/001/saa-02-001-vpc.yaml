@@ -30,17 +30,6 @@ Resources:
     Properties:
       CidrBlock: !Ref SubnetCidrBlock
       VpcId: !Ref VPC
-  
-  #PrivateRouteTable:
-  #  Type: AWS::EC2::RouteTable
-  #  Properties:
-  #    VpcId: !Ref VPC
-  #
-  #PrivateSubnetPrivateRouteTableAssociation:
-  #  Type: AWS::EC2::SubnetRouteTableAssociation
-  #  Properties:
-  #    SubnetId: !Ref PrivateSubnet
-  #    RouteTableId: !Ref PrivateRouteTable
       
   InstanceSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -73,11 +62,6 @@ Outputs:
       
   PrivateSubnet:
     Value: !Ref PrivateSubnet
-      
-  #PrivateRouteTable:
-  #  Value: !Ref PrivateRouteTable
-  #  Export:
-  #    Name: !Sub ${Prefix}-PrivateRouteTable
   
   InstanceSecurityGroup:
     Value: !Ref InstanceSecurityGroup
