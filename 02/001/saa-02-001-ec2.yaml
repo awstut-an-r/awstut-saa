@@ -1,14 +1,21 @@
 AWSTemplateFormatVersion: 2010-09-09
 
 Parameters:
+  ImageId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    
+  InstanceSecurityGroup:
+    Type: String
+    
+  InstanceType:
+    Type: String
+    
   Prefix:
     Type: String
-    Default: saa-02-001
     
-  LatestAmiId:
-    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
-    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-arm64-gp2
-
+  PrivateSubnet:
+    Type: String
+    
 
 Resources:
   PlacementGroup:
@@ -20,29 +27,27 @@ Resources:
     Type: AWS::EC2::Instance
     Properties:
       IamInstanceProfile: !Ref InstanceProfile
-      ImageId: !Ref LatestAmiId
-      InstanceType: m6g.medium
+      ImageId: !Ref ImageId
+      InstanceType: !Ref InstanceType
       PlacementGroupName: !Ref PlacementGroup
       NetworkInterfaces:
         - DeviceIndex: 0
-          SubnetId:
-            Fn::ImportValue: !Sub ${Prefix}-PrivateSubnet
+          SubnetId: !Ref PrivateSubnet
           GroupSet:
-            - Fn::ImportValue: !Sub ${Prefix}-InstanceSecurityGroup
+            - !Ref InstanceSecurityGroup
         
   Instance2:
     Type: AWS::EC2::Instance
     Properties:
       IamInstanceProfile: !Ref InstanceProfile
-      ImageId: !Ref LatestAmiId
-      InstanceType: m6g.medium
+      ImageId: !Ref ImageId
+      InstanceType: !Ref InstanceType
       PlacementGroupName: !Ref PlacementGroup
       NetworkInterfaces:
         - DeviceIndex: 0
-          SubnetId:
-            Fn::ImportValue: !Sub ${Prefix}-PrivateSubnet
+          SubnetId: !Ref PrivateSubnet
           GroupSet:
-            - Fn::ImportValue: !Sub ${Prefix}-InstanceSecurityGroup
+            - !Ref InstanceSecurityGroup
             
   InstanceProfile:
     Type: AWS::IAM::InstanceProfile

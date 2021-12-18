@@ -1,17 +1,20 @@
 AWSTemplateFormatVersion: 2010-09-09
 
 Parameters:
+  HTTPSPort:
+    Type: Number
+    
   Prefix:
     Type: String
-    Default: saa-02-001
+    
+  SubnetCidrBlock:
+    Type: String
     
   VPCCidrBlock:
     Type: String
-    Default: 10.0.0.0/16
     
-  PrivateSubnetCidrBlock:
+  SubnetCidrBlock:
     Type: String
-    Default: 10.0.1.0/24
     
 
 Resources:
@@ -25,8 +28,19 @@ Resources:
   PrivateSubnet:
     Type: AWS::EC2::Subnet
     Properties:
-      CidrBlock: !Ref PrivateSubnetCidrBlock
+      CidrBlock: !Ref SubnetCidrBlock
       VpcId: !Ref VPC
+  
+  #PrivateRouteTable:
+  #  Type: AWS::EC2::RouteTable
+  #  Properties:
+  #    VpcId: !Ref VPC
+  #
+  #PrivateSubnetPrivateRouteTableAssociation:
+  #  Type: AWS::EC2::SubnetRouteTableAssociation
+  #  Properties:
+  #    SubnetId: !Ref PrivateSubnet
+  #    RouteTableId: !Ref PrivateRouteTable
       
   InstanceSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -38,7 +52,7 @@ Resources:
         - IpProtocol: icmp
           FromPort: -1
           ToPort: -1
-          CidrIp: !Ref PrivateSubnetCidrBlock
+          CidrIp: !Ref SubnetCidrBlock
         
   EndpointSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -48,28 +62,25 @@ Resources:
       VpcId: !Ref VPC
       SecurityGroupIngress:
         - IpProtocol: tcp
-          FromPort: 443
-          ToPort: 443
+          FromPort: !Ref HTTPSPort
+          ToPort: !Ref HTTPSPort
           SourceSecurityGroupId: !Ref InstanceSecurityGroup
       
       
 Outputs:
   VPC:
     Value: !Ref VPC
-    Export:
-      Name: !Sub ${Prefix}-VPC
       
   PrivateSubnet:
     Value: !Ref PrivateSubnet
-    Export:
-      Name: !Sub ${Prefix}-PrivateSubnet
+      
+  #PrivateRouteTable:
+  #  Value: !Ref PrivateRouteTable
+  #  Export:
+  #    Name: !Sub ${Prefix}-PrivateRouteTable
   
   InstanceSecurityGroup:
     Value: !Ref InstanceSecurityGroup
-    Export:
-      Name: !Sub ${Prefix}-InstanceSecurityGroup
       
   EndpointSecurityGroup:
     Value: !Ref EndpointSecurityGroup
-    Export:
-      Name: !Sub ${Prefix}-EndpointSecurityGroup
