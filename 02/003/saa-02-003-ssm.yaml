@@ -22,9 +22,6 @@ Parameters:
   Prefix:
     Type: String
     
-  #SSMLogBucket:
-  #  Type: String
-    
   WaitForSuccessTimeoutSeconds:
     Type: Number
     
