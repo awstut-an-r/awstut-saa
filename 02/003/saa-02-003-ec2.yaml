@@ -13,9 +13,6 @@ Parameters:
   KeyName:
     Type: AWS::EC2::KeyPair::KeyName
     
-  #Prefix:
-  #  Type: String
-    
   PrivateSubnet1:
     Type: String
     
