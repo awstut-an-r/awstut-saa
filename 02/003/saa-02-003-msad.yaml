@@ -1,19 +1,25 @@
 AWSTemplateFormatVersion: 2010-09-09
 
 Parameters:
-  Prefix:
-    Type: String
-    Default: saa-02-003
-    
   MSADName:
     Type: String
-    Default: example.com
     
   MSADPassword:
     Type: String
-    Default: P@ssw0rd
+    
+  #Prefix:
+  #  Type: String
 
-
+  PrivateSubnet1:
+    Type: String
+    
+  PrivateSubnet2:
+    Type: String
+    
+  VPC:
+    Type: String
+    
+    
 Resources:
   MSAD:
     Type: AWS::DirectoryService::MicrosoftAD
@@ -23,14 +29,17 @@ Resources:
       Password: !Ref MSADPassword
       VpcSettings: 
         SubnetIds:
-          - Fn::ImportValue: !Sub ${Prefix}-PrivateSubnet1
-          - Fn::ImportValue: !Sub ${Prefix}-PrivateSubnet2
-        VpcId:
-          Fn::ImportValue: !Sub ${Prefix}-VPC
+          - !Ref PrivateSubnet1
+          - !Ref PrivateSubnet2
+        VpcId: !Ref VPC
 
 
 Outputs:
   MSAD:
     Value: !Ref MSAD
-    Export:
-      Name: !Sub ${Prefix}-MSAD
+    
+  MSADDnsIpAddress1:
+    Value: !Select [0, !GetAtt MSAD.DnsIpAddresses]
+    
+  MSADDnsIpAddress2:
+    Value: !Select [1, !GetAtt MSAD.DnsIpAddresses]

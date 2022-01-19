@@ -1,51 +1,54 @@
 AWSTemplateFormatVersion: 2010-09-09
 
 Parameters:
-  Prefix:
+  ImageId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    
+  InstanceSecurityGroup:
     Type: String
-    Default: saa-02-003
+
+  InstanceType:
+    Type: String
     
   KeyName:
     Type: AWS::EC2::KeyPair::KeyName
-    Default: MyKeyPair
     
-  LatestAmiId:
-    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
-    Default: /aws/service/ami-windows-latest/Windows_Server-2019-Japanese-Full-Base
+  #Prefix:
+  #  Type: String
     
-  InstanceType:
+  PrivateSubnet1:
     Type: String
-    Default: t3.nano
     
+  PrivateSubnet2:
+    Type: String
     
+
 Resources:
   Instance1:
     Type: AWS::EC2::Instance
     Properties:
       IamInstanceProfile: !Ref InstanceProfile
-      ImageId: !Ref LatestAmiId
+      ImageId: !Ref ImageId
       InstanceType: !Ref InstanceType
       KeyName: !Ref KeyName
       NetworkInterfaces:
         - DeviceIndex: 0
-          SubnetId:
-            Fn::ImportValue: !Sub ${Prefix}-PrivateSubnet1
+          SubnetId: !Ref PrivateSubnet1
           GroupSet:
-            - Fn::ImportValue: !Sub ${Prefix}-InstanceSecurityGroup
-
+            - !Ref InstanceSecurityGroup
+            
   Instance2:
     Type: AWS::EC2::Instance
     Properties:
       IamInstanceProfile: !Ref InstanceProfile
-      ImageId: !Ref LatestAmiId
+      ImageId: !Ref ImageId
       InstanceType: !Ref InstanceType
       KeyName: !Ref KeyName
       NetworkInterfaces:
         - DeviceIndex: 0
-          SubnetId:
-            Fn::ImportValue: !Sub ${Prefix}-PrivateSubnet2
+          SubnetId: !Ref PrivateSubnet2
           GroupSet:
-            - Fn::ImportValue: !Sub ${Prefix}-InstanceSecurityGroup
+            - !Ref InstanceSecurityGroup
             
   InstanceProfile:
     Type: AWS::IAM::InstanceProfile
@@ -67,3 +70,12 @@ Resources:
                 - ec2.amazonaws.com
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+        - arn:aws:iam::aws:policy/AmazonSSMDirectoryServiceAccess
+        
+        
+Outputs:
+  Instance1:
+    Value: !Ref Instance1
+    
+  Instance2:
+    Value: !Ref Instance2

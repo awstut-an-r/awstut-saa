@@ -1,10 +1,29 @@
 AWSTemplateFormatVersion: 2010-09-09
 
 Parameters:
-  Prefix:
+  FSxSecurityGroup:
     Type: String
-    Default: saa-02-003
     
+  #MSADName:
+  #  Type: String
+  MSAD:
+    Type: String
+    
+  #Prefix:
+  #  Type: String
+    
+  PrivateSubnet1:
+    Type: String
+    
+  PrivateSubnet2:
+    Type: String
+    
+  StorageCapacity:
+    Type: Number
+    
+  ThroughputCapacity:
+    Type: Number
+
 
 Resources:
   FSxForWindows:
@@ -12,16 +31,15 @@ Resources:
     Properties: 
       FileSystemType: WINDOWS
       SecurityGroupIds: 
-        - Fn::ImportValue: !Sub ${Prefix}-FSxSecurityGroup
-      StorageCapacity: 32
+        - !Ref FSxSecurityGroup
+      StorageCapacity: !Ref StorageCapacity
       StorageType: SSD
       SubnetIds: 
-        - Fn::ImportValue: !Sub ${Prefix}-PrivateSubnet1
-        - Fn::ImportValue: !Sub ${Prefix}-PrivateSubnet2
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
       WindowsConfiguration: 
-        ActiveDirectoryId:
-          Fn::ImportValue: !Sub ${Prefix}-MSAD
+        #ActiveDirectoryId: !Ref MSADName
+        ActiveDirectoryId: !Ref MSAD
         DeploymentType: MULTI_AZ_1
-        PreferredSubnetId:
-          Fn::ImportValue: !Sub ${Prefix}-PrivateSubnet1
-        ThroughputCapacity: 8
+        PreferredSubnetId: !Ref PrivateSubnet1
+        ThroughputCapacity: !Ref ThroughputCapacity
