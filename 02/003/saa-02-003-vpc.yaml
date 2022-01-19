@@ -15,9 +15,6 @@ Parameters:
   CidrIp3:
     Type: String
     
-  #HTTPSPort:
-  #  Type: Number
-    
   Prefix:
     Type: String
     
@@ -33,8 +30,6 @@ Resources:
     Type: AWS::EC2::VPC
     Properties:
       CidrBlock: !Ref VPCCidrBlock
-      #EnableDnsHostnames: true
-      #EnableDnsSupport: true
       
   IGW:
     Type: AWS::EC2::InternetGateway
@@ -144,18 +139,6 @@ Resources:
           ToPort: !Ref SMBPort
           SourceSecurityGroupId: !Ref InstanceSecurityGroup
           
-  #EndpointSecurityGroup:
-  #  Type: AWS::EC2::SecurityGroup
-  #  Properties:
-  #    GroupName: !Sub ${Prefix}-EndpointSecurityGroup
-  #    GroupDescription: Allow HTTPS from InstanceSecurityGroup.
-  #    VpcId: !Ref VPC
-  #    SecurityGroupIngress:
-  #      - IpProtocol: tcp
-  #        FromPort: !Ref HTTPSPort
-  #        ToPort: !Ref HTTPSPort
-  #        SourceSecurityGroupId: !Ref InstanceSecurityGroup
-          
           
 Outputs:
   VPC:
@@ -172,6 +155,3 @@ Outputs:
     
   FSxSecurityGroup:
     Value: !Ref FSxSecurityGroup
-      
-  #EndpointSecurityGroup:
-  #  Value: !Ref EndpointSecurityGroup
