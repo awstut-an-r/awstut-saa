@@ -6,9 +6,6 @@ Parameters:
     
   MSADPassword:
     Type: String
-    
-  #Prefix:
-  #  Type: String
 
   PrivateSubnet1:
     Type: String
