@@ -4,13 +4,8 @@ Parameters:
   FSxSecurityGroup:
     Type: String
     
-  #MSADName:
-  #  Type: String
   MSAD:
     Type: String
-    
-  #Prefix:
-  #  Type: String
     
   PrivateSubnet1:
     Type: String
@@ -38,7 +33,6 @@ Resources:
         - !Ref PrivateSubnet1
         - !Ref PrivateSubnet2
       WindowsConfiguration: 
-        #ActiveDirectoryId: !Ref MSADName
         ActiveDirectoryId: !Ref MSAD
         DeploymentType: MULTI_AZ_1
         PreferredSubnetId: !Ref PrivateSubnet1
