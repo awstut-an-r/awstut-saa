@@ -150,7 +150,6 @@ Resources:
   Service2TaskScalingRole:
     Type: AWS::IAM::Role
     Properties:
-      #RoleName: Service2TaskScalingRole
       AssumeRolePolicyDocument:
         Statement:
           - Effect: Allow
