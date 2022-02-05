@@ -13,15 +13,6 @@ Parameters:
   CidrIp2:
     Type: String
     
-  #CidrIp3:
-  #  Type: String
-  #  
-  #CidrIp4:
-  #  Type: String
-    
-  #HTTPPort:
-  #  Type: Number
-    
   HTTPSPort:
     Type: Number
     
@@ -97,31 +88,11 @@ Outputs:
     Export:
       Name: !Sub ${Prefix}-VPC
       
-  #AZ1:
-  #  Value: !Ref AZ1
-  #  Export:
-  #    Name: !Sub ${Prefix}-AZ1
-  #    
-  #AZ2:
-  #  Value: !Ref AZ2
-  #  Export:
-  #    Name: !Sub ${Prefix}-AZ2
-      
   PrivateSubnet1:
     Value: !Ref PrivateSubnet1
       
   PrivateSubnet2:
     Value: !Ref PrivateSubnet2
-      
-  #PrivateRouteTable1:
-  #  Value: !Ref PrivateRouteTable1
-  #  Export:
-  #    Name: !Sub ${Prefix}-PrivateRouteTable1
-  #    
-  #PrivateRouteTable2:
-  #  Value: !Ref PrivateRouteTable2
-  #  Export:
-  #    Name: !Sub ${Prefix}-PrivateRouteTable2
       
   PrivateRouteTable:
     Value: !Ref PrivateRouteTable
