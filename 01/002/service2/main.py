@@ -26,7 +26,6 @@ def main():
         messages = queue.receive_messages(MaxNumberOfMessages=1)
         
         for msg in messages:
-            # print(msg.body)
             logging.info(msg.body)
             num = int(msg.body)
             
