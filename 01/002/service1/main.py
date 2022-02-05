@@ -17,7 +17,6 @@ sqs = boto3.resource('sqs',
 queue = sqs.get_queue_by_name(QueueName=queue_name)
 
 def main():
-    #for i in range(LOOP_COUNT):
     while True:
         now = datetime.datetime.now()
         now_str = now.strftime('%Y%m%d%H%M%S%f')
