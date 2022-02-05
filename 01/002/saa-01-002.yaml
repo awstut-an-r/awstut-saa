@@ -9,10 +9,6 @@ Parameters:
     Type: String
     Default: saa-01-002
     
-  #HTTPPort:
-  #  Type: Number
-  #  Default: 80
-    
   HTTPSPort:
     Type: Number
     Default: 443
@@ -40,9 +36,6 @@ Resources:
         AvailabilityZone2: d
         CidrIp1: 10.0.1.0/24
         CidrIp2: 10.0.2.0/24
-        #CidrIp3: 10.0.3.0/24
-        #CidrIp4: 10.0.4.0/24
-        #HTTPPort: !Ref HTTPPort
         HTTPSPort: !Ref HTTPSPort
         Prefix: !Ref Prefix
         VPCCidrBlock: 10.0.0.0/16
@@ -79,9 +72,6 @@ Resources:
         
   FargateClusterStack:
     Type: AWS::CloudFormation::Stack
-    #DependsOn:
-    #  - EndpointStack
-    #  - ECRStack
     Properties:
       TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-fargate-cluster.yaml"
       Parameters:
