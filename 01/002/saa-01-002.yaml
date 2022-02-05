@@ -1,0 +1,135 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  TemplateBucketName:
+    Type: String
+    Default: awstut-bucket
+    
+  Prefix:
+    Type: String
+    Default: saa-01-002
+    
+  #HTTPPort:
+  #  Type: Number
+  #  Default: 80
+    
+  HTTPSPort:
+    Type: Number
+    Default: 443
+    
+  ServiceCpu:
+    Type: Number
+    Default: 512
+    
+  ServiceMemory:
+    Type: Number
+    Default: 1024
+    
+  SQSEndpointUrl:
+    Type: String
+    Default: https://sqs.ap-northeast-1.amazonaws.com
+    
+
+Resources:
+  VPCStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-vpc.yaml"
+      Parameters:
+        AvailabilityZone1: a
+        AvailabilityZone2: d
+        CidrIp1: 10.0.1.0/24
+        CidrIp2: 10.0.2.0/24
+        #CidrIp3: 10.0.3.0/24
+        #CidrIp4: 10.0.4.0/24
+        #HTTPPort: !Ref HTTPPort
+        HTTPSPort: !Ref HTTPSPort
+        Prefix: !Ref Prefix
+        VPCCidrBlock: 10.0.0.0/16
+
+  EndpointStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn:
+      - VPCStack
+    Properties:
+      TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-endpoint.yaml"
+      Parameters:
+        EndpointSecurityGroup: !GetAtt VPCStack.Outputs.EndpointSecurityGroup
+        Prefix: !Ref Prefix
+        PrivateRouteTable: !GetAtt VPCStack.Outputs.PrivateRouteTable
+        PrivateSubnet1: !GetAtt VPCStack.Outputs.PrivateSubnet1
+        PrivateSubnet2: !GetAtt VPCStack.Outputs.PrivateSubnet2
+        VPC: !GetAtt VPCStack.Outputs.VPC
+        
+  SQSStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-sqs.yaml"
+      Parameters:
+        Prefix: !Ref Prefix
+        ReceiveMessageWaitTimeSeconds: 20
+        VisibilityTimeout: 90
+        
+  CloudWatchStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-cloudwatch.yaml"
+      Parameters:
+        Prefix: !Ref Prefix
+        
+  FargateClusterStack:
+    Type: AWS::CloudFormation::Stack
+    #DependsOn:
+    #  - EndpointStack
+    #  - ECRStack
+    Properties:
+      TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-fargate-cluster.yaml"
+      Parameters:
+        Prefix: !Ref Prefix
+        
+  FargateService1Stack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn:
+      - EndpointStack
+      - FargateClusterStack
+    Properties:
+      TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-fargate-service1.yaml"
+      Parameters:
+        Cluster: !GetAtt FargateClusterStack.Outputs.Cluster
+        FargateTaskExecutionRole: !GetAtt FargateClusterStack.Outputs.FargateTaskExecutionRole
+        LogGroup: !GetAtt CloudWatchStack.Outputs.LogGroup1
+        Prefix: !Ref Prefix
+        PrivateSubnet: !GetAtt VPCStack.Outputs.PrivateSubnet1
+        QueueArn: !GetAtt SQSStack.Outputs.QueueArn
+        QueueName: !GetAtt SQSStack.Outputs.QueueName
+        Repository:
+          Fn::ImportValue: !Sub "${Prefix}-Repository1"
+        ServiceCpu: !Ref ServiceCpu
+        ServiceMemory: !Ref ServiceMemory
+        ServiceName: !Sub "${Prefix}-service1"
+        ServiceSecurityGroup: !GetAtt VPCStack.Outputs.ServiceSecurityGroup
+        SQSEndpointUrl: !Ref SQSEndpointUrl
+
+  FargateService2Stack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn:
+      - EndpointStack
+      - FargateClusterStack
+    Properties:
+      TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-fargate-service2.yaml"
+      Parameters:
+        Cluster: !GetAtt FargateClusterStack.Outputs.Cluster
+        FargateTaskExecutionRole: !GetAtt FargateClusterStack.Outputs.FargateTaskExecutionRole
+        Interval: 60
+        LogGroup: !GetAtt CloudWatchStack.Outputs.LogGroup2
+        Prefix: !Ref Prefix
+        PrivateSubnet: !GetAtt VPCStack.Outputs.PrivateSubnet2
+        QueueArn: !GetAtt SQSStack.Outputs.QueueArn
+        QueueName: !GetAtt SQSStack.Outputs.QueueName
+        Repository:
+          Fn::ImportValue: !Sub "${Prefix}-Repository2"
+        ServiceCpu: !Ref ServiceCpu
+        ServiceMemory: !Ref ServiceMemory
+        ServiceName: !Sub "${Prefix}-service2"
+        ServiceSecurityGroup: !GetAtt VPCStack.Outputs.ServiceSecurityGroup
+        SQSEndpointUrl: !Ref SQSEndpointUrl

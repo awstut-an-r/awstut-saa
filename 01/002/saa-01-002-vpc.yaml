@@ -1,0 +1,133 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  AvailabilityZone1:
+    Type: String
+  
+  AvailabilityZone2:
+    Type: String
+    
+  CidrIp1:
+    Type: String
+    
+  CidrIp2:
+    Type: String
+    
+  #CidrIp3:
+  #  Type: String
+  #  
+  #CidrIp4:
+  #  Type: String
+    
+  #HTTPPort:
+  #  Type: Number
+    
+  HTTPSPort:
+    Type: Number
+    
+  Prefix:
+    Type: String
+    
+  VPCCidrBlock:
+    Type: String
+    
+
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VPCCidrBlock
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Sub "${AWS::Region}${AvailabilityZone1}"
+      CidrBlock: !Ref CidrIp1
+      VpcId: !Ref VPC
+      
+  PrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Sub "${AWS::Region}${AvailabilityZone2}"
+      CidrBlock: !Ref CidrIp2
+      VpcId: !Ref VPC
+      
+  PrivateRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+
+  PrivateSubnet1PrivateRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet1
+      RouteTableId: !Ref PrivateRouteTable
+      
+  PrivateSubnet2PrivateRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet2
+      RouteTableId: !Ref PrivateRouteTable
+      
+  ServiceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub "${Prefix}-ServiceSecurityGroup"
+      GroupDescription: Deny All.
+      VpcId: !Ref VPC
+      
+  EndpointSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub "${Prefix}-EndpointSecurityGroup"
+      GroupDescription: Allow HTTPS from ServiceSecurityGroup.
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: !Ref HTTPSPort
+          ToPort: !Ref HTTPSPort
+          SourceSecurityGroupId: !Ref ServiceSecurityGroup
+      
+      
+Outputs:
+  VPC:
+    Value: !Ref VPC
+    Export:
+      Name: !Sub ${Prefix}-VPC
+      
+  #AZ1:
+  #  Value: !Ref AZ1
+  #  Export:
+  #    Name: !Sub ${Prefix}-AZ1
+  #    
+  #AZ2:
+  #  Value: !Ref AZ2
+  #  Export:
+  #    Name: !Sub ${Prefix}-AZ2
+      
+  PrivateSubnet1:
+    Value: !Ref PrivateSubnet1
+      
+  PrivateSubnet2:
+    Value: !Ref PrivateSubnet2
+      
+  #PrivateRouteTable1:
+  #  Value: !Ref PrivateRouteTable1
+  #  Export:
+  #    Name: !Sub ${Prefix}-PrivateRouteTable1
+  #    
+  #PrivateRouteTable2:
+  #  Value: !Ref PrivateRouteTable2
+  #  Export:
+  #    Name: !Sub ${Prefix}-PrivateRouteTable2
+      
+  PrivateRouteTable:
+    Value: !Ref PrivateRouteTable
+      
+  ServiceSecurityGroup:
+    Value: !Ref ServiceSecurityGroup
+      
+  EndpointSecurityGroup:
+    Value: !Ref EndpointSecurityGroup

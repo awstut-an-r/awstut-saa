@@ -1,0 +1,25 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  Prefix:
+    Type: String
+    
+
+Resources:
+  LogGroup1:
+    Type: AWS::Logs::LogGroup
+    Properties: 
+      LogGroupName: !Sub ${Prefix}-LogGroup1
+
+  LogGroup2:
+    Type: AWS::Logs::LogGroup
+    Properties: 
+      LogGroupName: !Sub ${Prefix}-LogGroup2
+      
+
+Outputs:
+  LogGroup1:
+    Value: !Ref LogGroup1
+      
+  LogGroup2:
+    Value: !Ref LogGroup2

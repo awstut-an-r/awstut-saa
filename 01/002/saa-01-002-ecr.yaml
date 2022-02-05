@@ -1,0 +1,30 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  Prefix:
+    Type: String
+    Default: saa-01-002
+    
+
+Resources:
+  Repository1:
+    Type: AWS::ECR::Repository
+    Properties: 
+      RepositoryName: !Sub "${Prefix}-repository1"
+
+  Repository2:
+    Type: AWS::ECR::Repository
+    Properties: 
+      RepositoryName: !Sub "${Prefix}-repository2"
+      
+      
+Outputs:
+  Repository1:
+    Value: !Ref Repository1
+    Export:
+      Name: !Sub "${Prefix}-Repository1"
+    
+  Repository2:
+    Value: !Ref Repository2
+    Export:
+      Name: !Sub "${Prefix}-Repository2"
