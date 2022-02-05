@@ -24,15 +24,6 @@ def is_even(num):
 def main():
     while True:
         messages = queue.receive_messages(MaxNumberOfMessages=1)
-        # print(messages)
-        # logging.debug(messages)
-        # print('aaaaaaaaaaaaaa')
-        # 1 / 0
-        
-        #if len(messages) == 0:
-        #    # print('no messages')
-        #    logging.info('no messages')
-        #    continue
         
         for msg in messages:
             # print(msg.body)
