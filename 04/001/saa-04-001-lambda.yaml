@@ -1,10 +1,19 @@
 AWSTemplateFormatVersion: 2010-09-09
 
 Parameters:
+  KinesisDataStreamArn:
+    Type: String
+    
+  KinesisDataStreamName:
+    Type: String
+    
   Prefix:
     Type: String
-    Default: saa-04-001
+    #Default: saa-04-001
 
+  Timeout:
+    Type: Number
+    
 
 Resources:
   DataSourceLambda:
@@ -12,21 +21,21 @@ Resources:
     Properties:
       Environment:
         Variables:
-          KINESIS_STREAM_NAME:
-            Fn::ImportValue: !Sub ${Prefix}-KinesisDataStreamName
+          KINESIS_STREAM_NAME: !Ref KinesisDataStreamName
       Runtime: python3.8
       Role: !GetAtt DataSourceLambdaRole.Arn
-      Timeout: 60
+      Timeout: !Ref Timeout
       Handler: index.lambda_handler
       Code:
         # https://docs.aws.amazon.com/ja_jp/streams/latest/dev/get-started-exercise.html
         ZipFile: |
-          import boto3
           import base64
           import datetime
           import json
           import os
           import random
+          
+          import boto3
           
           STREAM_NAME = os.environ['KINESIS_STREAM_NAME']
           LIMIT = 100
@@ -45,6 +54,8 @@ Resources:
               print(data)
               kinesis_client.put_record(
                 StreamName=stream_name,
+                # Data=json.dumps(data),
+                # Data=base64.b64encode(json.dumps(data).encode('utf-8')),
                 Data=json.dumps(data).encode('utf-8'),
                 PartitionKey="partitionkey")
           
@@ -73,6 +84,6 @@ Resources:
                 Action:
                   - kinesis:PutRecord
                 Resource:
-                  - Fn::ImportValue: !Sub ${Prefix}-KinesisDataStreamArn
+                  - !Ref KinesisDataStreamArn
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole

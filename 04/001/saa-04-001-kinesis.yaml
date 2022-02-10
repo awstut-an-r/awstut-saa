@@ -3,11 +3,12 @@ AWSTemplateFormatVersion: 2010-09-09
 Parameters:
   Prefix:
     Type: String
-    Default: saa-04-001
+    
+  ShardCount:
+    Type: Number
     
   NamePrefix:
     Type: String
-    Default: SAMPLE_APP
     
 
 Resources:
@@ -15,13 +16,13 @@ Resources:
     Type: AWS::Kinesis::Stream
     Properties:
       Name: KinesisDataStream
-      ShardCount: 1
+      ShardCount: !Ref ShardCount
       
       
   KinesisDataAnalytics:
     Type: AWS::KinesisAnalytics::Application
     Properties: 
-      ApplicationName: !Sub ${Prefix}-application
+      ApplicationName: !Sub "${Prefix}-application"
       ApplicationDescription: sample application.
       ApplicationCode:
         !Sub |
@@ -80,12 +81,12 @@ Resources:
 
 
 Outputs:
-  KinesisDataStreamName:
-    Value: !Ref KinesisDataStream
-    Export:
-      Name: !Sub ${Prefix}-KinesisDataStreamName
-      
   KinesisDataStreamArn:
     Value: !GetAtt KinesisDataStream.Arn
-    Export:
-      Name: !Sub ${Prefix}-KinesisDataStreamArn
+    #Export:
+    #  Name: !Sub ${Prefix}-KinesisDataStreamArn
+    
+  KinesisDataStreamName:
+    Value: !Ref KinesisDataStream
+    #Export:
+    #  Name: !Sub ${Prefix}-KinesisDataStreamName

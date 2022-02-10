@@ -1,0 +1,32 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  TemplateBucketName:
+    Type: String
+    Default: awstut-bucket
+    
+  Prefix:
+    Type: String
+    Default: saa-04-001
+    
+
+Resources:
+  KinesisStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-kinesis.yaml"
+      Parameters:
+        Prefix: !Ref Prefix
+        NamePrefix: SAMPLE_APP
+        ShardCount: 1
+  
+
+  LambdaStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-lambda.yaml"
+      Parameters:
+        KinesisDataStreamArn: !GetAtt KinesisStack.Outputs.KinesisDataStreamArn
+        KinesisDataStreamName: !GetAtt KinesisStack.Outputs.KinesisDataStreamName
+        Prefix: !Ref Prefix
+        Timeout: 60
