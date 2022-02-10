@@ -64,7 +64,6 @@ Resources:
             Principal:
               Service: kinesisanalytics.amazonaws.com
             Action: sts:AssumeRole
-      #Path: /
       Policies:
         - PolicyName: ReadInputKinesisDataStream
           PolicyDocument:
@@ -83,10 +82,6 @@ Resources:
 Outputs:
   KinesisDataStreamArn:
     Value: !GetAtt KinesisDataStream.Arn
-    #Export:
-    #  Name: !Sub ${Prefix}-KinesisDataStreamArn
     
   KinesisDataStreamName:
     Value: !Ref KinesisDataStream
-    #Export:
-    #  Name: !Sub ${Prefix}-KinesisDataStreamName
