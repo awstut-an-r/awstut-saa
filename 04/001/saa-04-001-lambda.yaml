@@ -9,7 +9,6 @@ Parameters:
     
   Prefix:
     Type: String
-    #Default: saa-04-001
 
   Timeout:
     Type: Number
@@ -54,8 +53,6 @@ Resources:
               print(data)
               kinesis_client.put_record(
                 StreamName=stream_name,
-                # Data=json.dumps(data),
-                # Data=base64.b64encode(json.dumps(data).encode('utf-8')),
                 Data=json.dumps(data).encode('utf-8'),
                 PartitionKey="partitionkey")
           
