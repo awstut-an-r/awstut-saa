@@ -83,7 +83,7 @@ Resources:
     Type: AWS::AutoScaling::ScheduledAction
     Properties:
       AutoScalingGroupName: !Ref AutoScalingGroup
-      DesiredCapacity: !Ref MSize
+      DesiredCapacity: !Ref MinSize
       MaxSize: !Ref MinSize
       MinSize: !Ref MinSize
       Recurrence: !Ref ScheduledActionInRecurrence
