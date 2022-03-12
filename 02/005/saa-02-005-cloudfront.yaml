@@ -1,0 +1,41 @@
+AWSTemplateFormatVersion: 2010-09-09
+Parameters:
+  CacheTTL:
+    Type: Number
+    
+  InstancePublicDnsName:
+    Type: String
+    
+  Prefix:
+    Type: String
+    
+
+Resources:
+  Distribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        DefaultCacheBehavior:
+          AllowedMethods:
+            - GET
+            - HEAD
+          CachedMethods:
+            - GET
+            - HEAD
+          Compress: true
+          ForwardedValues:
+            Cookies:
+              Forward: none
+            QueryString: false
+          TargetOriginId: !Ref InstancePublicDnsName
+          ViewerProtocolPolicy: allow-all
+          DefaultTTL: !Ref CacheTTL
+          MaxTTL: !Ref CacheTTL
+          MinTTL: !Ref CacheTTL
+        Enabled: true
+        Origins:
+          - CustomOriginConfig:
+              OriginProtocolPolicy: http-only
+            DomainName: !Ref InstancePublicDnsName
+            Id: !Ref InstancePublicDnsName
+        PriceClass: PriceClass_All
