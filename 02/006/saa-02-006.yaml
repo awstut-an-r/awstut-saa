@@ -80,10 +80,8 @@ Resources:
         DBUser: testuser
         DBPassword: Passw0rd
         DBName: testdb
-        #DBTableName: testtable
         DBEngine: aurora-mysql
         DBEngineVersion: 8.0.mysql_aurora.3.01.0
-        #DBFamily: aurora5.7
         DBInstanceClass: db.t4g.medium
         DBSecurityGroup: !GetAtt VPCStack.Outputs.DBSecurityGroup
         Prefix: !Ref Prefix
