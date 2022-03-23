@@ -1,0 +1,111 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  AvailabilityZone1:
+    Type: String
+    
+  AvailabilityZone2:
+    Type: String
+    
+  DBUser:
+    Type: String
+    
+  DBPassword:
+    Type: String
+    
+  DBName:
+    Type: String
+    
+  #DBTableName:
+  #  Type: String
+    
+  DBEngine:
+    Type: String
+  
+  DBEngineVersion:
+    Type: String
+    
+  #DBFamily:
+  #  Type: String
+    
+  DBInstanceClass:
+    Type: String
+    
+  DBSecurityGroup:
+    Type: String
+    
+  Prefix:
+    Type: String
+    
+  PrivateSubnet2:
+    Type: String
+    
+  PrivateSubnet3:
+    Type: String
+    
+    
+Resources:
+  DBCluster:
+    Type: AWS::RDS::DBCluster
+    Properties:
+      DatabaseName: !Ref DBName
+      DBClusterIdentifier: !Sub ${Prefix}-DBCluster
+      #DBClusterParameterGroupName: !Ref DBClusterParameterGroup
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      Engine: !Ref DBEngine
+      EngineVersion: !Ref DBEngineVersion
+      MasterUsername: !Ref DBUser # cannot use "-".
+      MasterUserPassword: !Ref DBPassword # cannot use "/@'"
+      StorageEncrypted: true
+      VpcSecurityGroupIds:
+        - !Ref DBSecurityGroup
+        
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupName: !Sub ${Prefix}-dbsubnetgroup # must be lowercase alphanumeric characters or hyphens.
+      DBSubnetGroupDescription: Test DBSubnetGroup for Aurora.
+      SubnetIds:
+        - !Ref PrivateSubnet2
+        - !Ref PrivateSubnet3
+        
+      
+  DBInstance1:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBClusterIdentifier: !Ref DBCluster
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      #DBParameterGroupName: !Ref DBParameterGroup
+      DBInstanceIdentifier: !Sub ${Prefix}-DBInstance1
+      DBInstanceClass: !Ref DBInstanceClass
+      Engine: !Ref DBEngine
+      AvailabilityZone: !Sub ${AWS::Region}${AvailabilityZone1}
+      PubliclyAccessible: false
+      #PromotionTier: 1
+      
+  DBInstance2:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBClusterIdentifier: !Ref DBCluster
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      #DBParameterGroupName: !Ref DBParameterGroup
+      DBInstanceIdentifier: !Sub ${Prefix}-DBInstance2
+      DBInstanceClass: !Ref DBInstanceClass
+      Engine: !Ref DBEngine
+      AvailabilityZone: !Sub ${AWS::Region}${AvailabilityZone2}
+      PubliclyAccessible: false
+      #PromotionTier: 2
+      
+  #DBClusterParameterGroup:
+  #  Type: AWS::RDS::DBClusterParameterGroup
+  #  Properties:
+  #    Description: Test DBClusterParameterGroup for Aurora.
+  #    Family: !Ref DBFamily
+  #    Parameters:
+  #      character_set_database: utf8
+    
+  #DBParameterGroup:
+  #  Type: AWS::RDS::DBParameterGroup
+  #  Properties:
+  #    Description: Test DBParameterGroup for Aurora.
+  #    Family: !Ref DBFamily
