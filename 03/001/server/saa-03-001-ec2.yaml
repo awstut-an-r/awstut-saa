@@ -10,17 +10,11 @@ Parameters:
   InstanceType:
     Type: String
     
-  #PlaybookBucketArn:
-  #  Type: String
-    
   Prefix:
     Type: String
     
   PublicSubnet:
     Type: String
-    
-  #PrivateSubnet2:
-  #  Type: String
     
 
 Resources:
@@ -38,11 +32,9 @@ Resources:
   Instance:
     Type: AWS::EC2::Instance
     Properties:
-      #IamInstanceProfile: !Ref InstanceProfile
       ImageId: !Ref ImageId
       InstanceType: !Ref InstanceType
       NetworkInterfaces:
-        #- AssociatePublicIpAddress: true
         - DeviceIndex: 0
           SubnetId: !Ref PublicSubnet
           GroupSet:
@@ -57,8 +49,5 @@ Resources:
       
         
 Outputs:
-  #Instance:
-  #  Value: !Ref Instance
-      
   InstancePublicDnsName:
     Value: !GetAtt Instance.PublicDnsName
