@@ -24,15 +24,8 @@ Resources:
     Properties:
       TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-vpc.yaml"
       Parameters:
-        #AvailabilityZone1: a
-        #AvailabilityZone2: d
         CidrIp: 10.0.1.0/24
-        #CidrIp1: 10.0.1.0/24
-        #CidrIp2: 10.0.2.0/24
-        #CidrIp3: 10.0.3.0/24
-        #CidrIp4: 10.0.4.0/24
         HTTPPort: !Ref HTTPPort
-        #HTTPSPort: !Ref HTTPSPort
         Prefix: !Ref Prefix
         VPCCidrBlock: 10.0.0.0/16
         
@@ -59,6 +52,5 @@ Resources:
         CacheTTL: 60
         GeoRestrictionLocation: !Ref GeoRestrictionLocation
         HTTPPort: !Ref HTTPPort
-        #OriginDomainName: !GetAtt ALBStack.Outputs.ALBDNSName
         InstancePublicDnsName: !GetAtt EC2Stack.Outputs.InstancePublicDnsName
         Prefix: !Ref Prefix
