@@ -1,0 +1,64 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  ImageId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    
+  InstanceSecurityGroup:
+    Type: String
+
+  InstanceType:
+    Type: String
+    
+  #PlaybookBucketArn:
+  #  Type: String
+    
+  Prefix:
+    Type: String
+    
+  PublicSubnet:
+    Type: String
+    
+  #PrivateSubnet2:
+  #  Type: String
+    
+
+Resources:
+  EIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+      
+  EIPAssociation:
+    Type: AWS::EC2::EIPAssociation
+    Properties:
+      AllocationId: !GetAtt EIP.AllocationId
+      InstanceId: !Ref Instance
+      
+  Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      #IamInstanceProfile: !Ref InstanceProfile
+      ImageId: !Ref ImageId
+      InstanceType: !Ref InstanceType
+      NetworkInterfaces:
+        #- AssociatePublicIpAddress: true
+        - DeviceIndex: 0
+          SubnetId: !Ref PublicSubnet
+          GroupSet:
+            - !Ref InstanceSecurityGroup
+      UserData: !Base64 |
+        #!/bin/bash -xe
+        yum update -y
+        yum install -y httpd
+        systemctl start httpd
+        systemctl enable httpd
+        ec2-metadata -i > /var/www/html/index.html
+      
+        
+Outputs:
+  #Instance:
+  #  Value: !Ref Instance
+      
+  InstancePublicDnsName:
+    Value: !GetAtt Instance.PublicDnsName
