@@ -10,9 +10,6 @@ Parameters:
   InstanceType:
     Type: String
     
-  #PlaybookBucketArn:
-  #  Type: String
-    
   Prefix:
     Type: String
     
@@ -51,32 +48,5 @@ Resources:
             Principal:
               Service:
                 - ec2.amazonaws.com
-                #- ssm.amazonaws.com
-      #Policies:
-      #  - PolicyName: SSMStateManagerPolicy
-      #    PolicyDocument:
-      #      Version: 2012-10-17
-      #      Statement:
-      #        - Effect: Allow
-      #          Action:
-      #            - s3:GetObject
-      #            - s3:PutObject
-      #            - s3:PutObjectAcl
-      #            - s3:ListBucket
-      #          Resource:
-      #            - !Ref PlaybookBucketArn
-      #            - !Sub "${PlaybookBucketArn}/*"
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
-        
-        
-#Outputs:
-#  Instance1:
-#    Value: !Ref Instance1
-#    #Export:
-#    #  Name: !Sub ${Prefix}-Instance1
-#      
-#  Instance2:
-#    Value: !Ref Instance2
-#    #Export:
-#    #  Name: !Sub ${Prefix}-Instance2
