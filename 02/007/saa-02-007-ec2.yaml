@@ -33,7 +33,6 @@ Resources:
       IamInstanceProfile: !Ref InstanceProfile
       ImageId: !Ref ImageId
       InstanceType: !Ref InstanceType
-      #KeyName: !Ref KeyName
       NetworkInterfaces:
         - DeviceIndex: 0
           SubnetId: !Ref PrivateSubnet1
@@ -46,7 +45,6 @@ Resources:
       IamInstanceProfile: !Ref InstanceProfile
       ImageId: !Ref ImageId
       InstanceType: !Ref InstanceType
-      #KeyName: !Ref KeyName
       NetworkInterfaces:
         - DeviceIndex: 0
           SubnetId: !Ref PrivateSubnet2
@@ -94,7 +92,6 @@ Resources:
             Principal:
               Service:
                 - ec2.amazonaws.com
-                #- ssm.amazonaws.com
       Policies:
         - PolicyName: SSMStateManagerPolicy
           PolicyDocument:
@@ -107,25 +104,7 @@ Resources:
                   - s3:PutObjectAcl
                   - s3:ListBucket
                 Resource:
-                  #- !Sub
-                  #  - ${S3Bucket}
-                  #  - S3Bucket:
-                  #      Fn::ImportValue: !Sub ${Prefix}-S3BucketArn
-                  #- !Sub
-                  #  - ${S3Bucket}/*
-                  #  - S3Bucket:
-                  #      Fn::ImportValue: !Sub ${Prefix}-S3BucketArn
-                  #- !Sub "arn:aws:s3:::${LogBucketName}/${Prefix}"
-                  #- !Sub "arn:aws:s3:::${LogBucketName}/${Prefix}/*"
                   - !Sub "arn:aws:s3:::${LogBucketName}"
                   - !Sub "arn:aws:s3:::${LogBucketName}/*"
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
-        
-        
-#Outputs:
-#  Instance1:
-#    Value: !Ref Instance1
-#    
-#  Instance2:
-#    Value: !Ref Instance2j
