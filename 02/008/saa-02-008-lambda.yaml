@@ -1,12 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 
 Parameters:
-  #BucketArn:
-  #  Type: String
-  #  
-  #BucketName:
-  #  Type: String
-  
   DBClusterCustomEndpoint1:
     Type: String
     
@@ -18,10 +12,7 @@ Parameters:
     
   Handler:
     Type: String
-    
-  #NLBLoadBalancerName:
-  #  Type: String
-    
+
   Prefix:
     Type: String
     
@@ -30,10 +21,10 @@ Parameters:
     
     
 Resources:
-  #CustomResource:
-  #  Type: Custom::CustomResource
-  #  Properties:
-  #    ServiceToken: !GetAtt Function.Arn
+  CustomResource:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !GetAtt Function.Arn
 
   Function:
     Type: AWS::Lambda::Function
@@ -55,7 +46,6 @@ Resources:
           client = boto3.client('rds')
            
           CREATE = 'Create'
-          #UPDATE = 'Update'
           response_data = {}
           
           def lambda_handler(event, context):
@@ -64,17 +54,10 @@ Resources:
                 response = client.describe_db_clusters(
                   DBClusterIdentifier=db_cluster_identifier
                   )
-                  
-                #print(response)
-                #print(response['DBClusters'][0]['DBClusterMembers'])
-                
+
                 read_replica_instances = [member for member in response['DBClusters'][0]['DBClusterMembers'] if member['IsClusterWriter'] == False]
                 for (endpoint_name, read_replica_instance) in zip(custom_endpoints, read_replica_instances):
-                  #print(endpoint_name)
-                  #print(read_replica_instance)
                   instance_name = read_replica_instance['DBInstanceIdentifier']
-                  #print(instance_name)
-                  
                   create_response = client.create_db_cluster_endpoint(
                     DBClusterIdentifier=db_cluster_identifier,
                     DBClusterEndpointIdentifier=endpoint_name,
@@ -82,7 +65,6 @@ Resources:
                     StaticMembers=[instance_name])
                   print(create_response)
                   response_data[endpoint_name] = create_response['Endpoint']
-                #response_data['PrivateAddresses'] = private_addresses
               
               cfnresponse.send(event, context, cfnresponse.SUCCESS, response_data)
               
@@ -91,7 +73,6 @@ Resources:
               cfnresponse.send(event, context, cfnresponse.FAILED, response_data)
       Environment:
         Variables:
-          #NLB_LOADBALANCER_NAME: !Ref NLBLoadBalancerName
           DB_CLUSTER_CUSTOM_ENDPOINT1: !Ref DBClusterCustomEndpoint1
           DB_CLUSTER_CUSTOM_ENDPOINT2: !Ref DBClusterCustomEndpoint2
           DB_CLUSTER_IDENTIFIER: !Ref DBClusterIdentifier
@@ -125,17 +106,3 @@ Resources:
                 Resource:
                   - !Sub "arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${DBClusterIdentifier}"
                   - !Sub "arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster-endpoint:*"
-                  #- !Ref BucketArn
-                  #- !Sub "${BucketArn}/*"
-                  #- !Ref ECRRepositoryArn
-        
-        
-#Outputs:
-#  NLBPrivateAddress1:
-#    Value: !Select [0, !GetAtt CustomResource.PrivateAddresses]
-#    
-#  NLBPrivateAddress2:
-#    Value: !Select [1, !GetAtt CustomResource.PrivateAddresses]
-#
-#  #FunctionArn:
-#  #  Value: !GetAtt Function.Arn
