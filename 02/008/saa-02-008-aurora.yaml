@@ -19,17 +19,11 @@ Parameters:
   DBName:
     Type: String
     
-  #DBTableName:
-  #  Type: String
-    
   DBEngine:
     Type: String
   
   DBEngineVersion:
     Type: String
-    
-  #DBFamily:
-  #  Type: String
     
   DBInstanceClass:
     Type: String
@@ -56,7 +50,6 @@ Resources:
     Properties:
       DatabaseName: !Ref DBName
       DBClusterIdentifier: !Sub "${Prefix}-dbcluster"
-      #DBClusterParameterGroupName: !Ref DBClusterParameterGroup
       DBSubnetGroupName: !Ref DBSubnetGroup
       Engine: !Ref DBEngine
       EngineVersion: !Ref DBEngineVersion
@@ -81,53 +74,33 @@ Resources:
     Properties:
       DBClusterIdentifier: !Ref DBCluster
       DBSubnetGroupName: !Ref DBSubnetGroup
-      #DBParameterGroupName: !Ref DBParameterGroup
       DBInstanceIdentifier: !Sub "${Prefix}-dbinstance1"
       DBInstanceClass: !Ref DBInstanceClass
       Engine: !Ref DBEngine
       AvailabilityZone: !Sub "${AWS::Region}${AvailabilityZone1}"
       PubliclyAccessible: false
-      #PromotionTier: 1
       
   DBInstance2:
     Type: AWS::RDS::DBInstance
     Properties:
       DBClusterIdentifier: !Ref DBCluster
       DBSubnetGroupName: !Ref DBSubnetGroup
-      #DBParameterGroupName: !Ref DBParameterGroup
       DBInstanceIdentifier: !Sub "${Prefix}-dbinstance2"
       DBInstanceClass: !Ref DBInstanceClass
       Engine: !Ref DBEngine
       AvailabilityZone: !Sub "${AWS::Region}${AvailabilityZone2}"
       PubliclyAccessible: false
-      #PromotionTier: 2
       
   DBInstance3:
     Type: AWS::RDS::DBInstance
     Properties:
       DBClusterIdentifier: !Ref DBCluster
       DBSubnetGroupName: !Ref DBSubnetGroup
-      #DBParameterGroupName: !Ref DBParameterGroup
       DBInstanceIdentifier: !Sub "${Prefix}-dbinstance3"
       DBInstanceClass: !Ref DBInstanceClass
       Engine: !Ref DBEngine
       AvailabilityZone: !Sub "${AWS::Region}${AvailabilityZone3}"
       PubliclyAccessible: false
-      #PromotionTier: 2
-      
-  #DBClusterParameterGroup:
-  #  Type: AWS::RDS::DBClusterParameterGroup
-  #  Properties:
-  #    Description: Test DBClusterParameterGroup for Aurora.
-  #    Family: !Ref DBFamily
-  #    Parameters:
-  #      character_set_database: utf8
-    
-  #DBParameterGroup:
-  #  Type: AWS::RDS::DBParameterGroup
-  #  Properties:
-  #    Description: Test DBParameterGroup for Aurora.
-  #    Family: !Ref DBFamily
 
 
 Outputs:
