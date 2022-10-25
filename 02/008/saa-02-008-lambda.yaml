@@ -1,0 +1,141 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  #BucketArn:
+  #  Type: String
+  #  
+  #BucketName:
+  #  Type: String
+  
+  DBClusterCustomEndpoint1:
+    Type: String
+    
+  DBClusterCustomEndpoint2:
+    Type: String
+  
+  DBClusterIdentifier:
+    Type: String
+    
+  Handler:
+    Type: String
+    
+  #NLBLoadBalancerName:
+  #  Type: String
+    
+  Prefix:
+    Type: String
+    
+  Runtime:
+    Type: String
+    
+    
+Resources:
+  #CustomResource:
+  #  Type: Custom::CustomResource
+  #  Properties:
+  #    ServiceToken: !GetAtt Function.Arn
+
+  Function:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        ZipFile: |
+          import boto3
+          import cfnresponse
+          import os
+          
+          db_cluster_identifier = os.environ['DB_CLUSTER_IDENTIFIER']
+          db_cluster_custom_endpoint1 = os.environ['DB_CLUSTER_CUSTOM_ENDPOINT1']
+          db_cluster_custom_endpoint2 = os.environ['DB_CLUSTER_CUSTOM_ENDPOINT2']
+          custom_endpoints = [
+            db_cluster_custom_endpoint1,
+            db_cluster_custom_endpoint2
+            ]
+          
+          client = boto3.client('rds')
+           
+          CREATE = 'Create'
+          #UPDATE = 'Update'
+          response_data = {}
+          
+          def lambda_handler(event, context):
+            try:
+              if event['RequestType'] == CREATE:
+                response = client.describe_db_clusters(
+                  DBClusterIdentifier=db_cluster_identifier
+                  )
+                  
+                #print(response)
+                #print(response['DBClusters'][0]['DBClusterMembers'])
+                
+                read_replica_instances = [member for member in response['DBClusters'][0]['DBClusterMembers'] if member['IsClusterWriter'] == False]
+                for (endpoint_name, read_replica_instance) in zip(custom_endpoints, read_replica_instances):
+                  #print(endpoint_name)
+                  #print(read_replica_instance)
+                  instance_name = read_replica_instance['DBInstanceIdentifier']
+                  #print(instance_name)
+                  
+                  create_response = client.create_db_cluster_endpoint(
+                    DBClusterIdentifier=db_cluster_identifier,
+                    DBClusterEndpointIdentifier=endpoint_name,
+                    EndpointType='READER',
+                    StaticMembers=[instance_name])
+                  print(create_response)
+                  response_data[endpoint_name] = create_response['Endpoint']
+                #response_data['PrivateAddresses'] = private_addresses
+              
+              cfnresponse.send(event, context, cfnresponse.SUCCESS, response_data)
+              
+            except Exception as e:
+              print(e)
+              cfnresponse.send(event, context, cfnresponse.FAILED, response_data)
+      Environment:
+        Variables:
+          #NLB_LOADBALANCER_NAME: !Ref NLBLoadBalancerName
+          DB_CLUSTER_CUSTOM_ENDPOINT1: !Ref DBClusterCustomEndpoint1
+          DB_CLUSTER_CUSTOM_ENDPOINT2: !Ref DBClusterCustomEndpoint2
+          DB_CLUSTER_IDENTIFIER: !Ref DBClusterIdentifier
+      FunctionName: !Sub "${Prefix}-function"
+      Handler: !Ref Handler
+      Runtime: !Ref Runtime
+      Role: !GetAtt FunctionRole.Arn
+
+  FunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: !Sub "${Prefix}-CreateAuroraCustomEndpointPolicy"
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - rds:CreateDBClusterEndpoint
+                  - rds:DescribeDBClusters
+                Resource:
+                  - !Sub "arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${DBClusterIdentifier}"
+                  - !Sub "arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster-endpoint:*"
+                  #- !Ref BucketArn
+                  #- !Sub "${BucketArn}/*"
+                  #- !Ref ECRRepositoryArn
+        
+        
+#Outputs:
+#  NLBPrivateAddress1:
+#    Value: !Select [0, !GetAtt CustomResource.PrivateAddresses]
+#    
+#  NLBPrivateAddress2:
+#    Value: !Select [1, !GetAtt CustomResource.PrivateAddresses]
+#
+#  #FunctionArn:
+#  #  Value: !GetAtt Function.Arn
