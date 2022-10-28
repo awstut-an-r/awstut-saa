@@ -58,10 +58,7 @@ Resources:
 
                 read_replica_instances = [member for member in response['DBClusters'][0]['DBClusterMembers'] if member['IsClusterWriter'] == False]
                 for (endpoint_name, read_replica_instance) in zip(custom_endpoints, read_replica_instances):
-                  #print(endpoint_name)
-                  #print(read_replica_instance)
                   instance_name = read_replica_instance['DBInstanceIdentifier']
-                  #print(instance_name)
                   
                   create_response = client.create_db_cluster_endpoint(
                     DBClusterIdentifier=db_cluster_identifier,
