@@ -18,10 +18,7 @@ Parameters:
     
   DAXSubnet2:
     Type: String
-    
-  #DynamoDBTable:
-  #  Type: String
-    
+
   DynamoDBTableArn:
     Type: String
   
@@ -41,16 +38,11 @@ Resources:
       Description: Test DAX Cluster
       IAMRoleARN: !GetAtt DAXRole.Arn
       NodeType: !Ref DAXNodeType
-      #NotificationTopicARN: String
       ParameterGroupName: !Ref DAXParameterGroup
-      #PreferredMaintenanceWindow: String
       ReplicationFactor: 2
       SecurityGroupIds: 
         - !Ref DAXSecurityGroup
-      #SSESpecification: 
-      #  SSESpecification
       SubnetGroupName: !Ref DAXSubnetGroup
-      #Tags: Json
       
   DAXParameterGroup:
     Type: AWS::DAX::ParameterGroup
@@ -82,8 +74,6 @@ Resources:
             Principal:
               Service:
                 - dax.amazonaws.com
-      #ManagedPolicyArns:
-      #  - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
       Policies:
         - PolicyName: !Sub "${Prefix}-DAXPolicy"
           PolicyDocument:
@@ -102,16 +92,12 @@ Resources:
                   - dynamodb:BatchWriteItem
                   - dynamodb:ConditionCheckItem
                 Resource:
-                  #- !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${DynamoDBTable}"
                   - !Ref DynamoDBTableArn
                   
                   
 Outputs:
   DAXClusterArn:
     Value: !GetAtt DAXCluster.Arn
-    
-  #DAXClusterDiscoveryEndpoint:
-  #  Value: !GetAtt DAXCluster.ClusterDiscoveryEndpoint
     
   DAXClusterDiscoveryEndpointURL:
     Value: !GetAtt DAXCluster.ClusterDiscoveryEndpointURL
