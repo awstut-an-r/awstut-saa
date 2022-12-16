@@ -156,20 +156,7 @@ Resources:
           FromPort: !Ref HTTPSPort
           ToPort: !Ref HTTPSPort
           CidrIp: 0.0.0.0/0
-          #SourceSecurityGroupId: !Ref InstanceSecurityGroup
-      
-  #EndpointSecurityGroup:
-  #  Type: AWS::EC2::SecurityGroup
-  #  Properties:
-  #    GroupName: !Sub "${Prefix}-EndpointSecurityGroup"
-  #    GroupDescription: Allow HTTPS from InstanceSecurityGroup.
-  #    VpcId: !Ref VPC
-  #    SecurityGroupIngress:
-  #      - IpProtocol: tcp
-  #        FromPort: !Ref HTTPSPort
-  #        ToPort: !Ref HTTPSPort
-  #        SourceSecurityGroupId: !Ref InstanceSecurityGroup
-      
+
   DAXSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -185,19 +172,7 @@ Resources:
           FromPort: !Ref DAXPort
           ToPort: !Ref DAXPort
           SourceSecurityGroupId: !Ref FunctionSecurityGroup
-          
-  #DBSecurityGroup:
-  #  Type: AWS::EC2::SecurityGroup
-  #  Properties:
-  #    GroupName: !Sub "${Prefix}-DBSecurityGroup"
-  #    GroupDescription: Allow MySQL from InstanceSecurityGroup.
-  #    VpcId: !Ref VPC
-  #    SecurityGroupIngress:
-  #      - IpProtocol: tcp
-  #        FromPort: !Ref MySQLPort
-  #        ToPort: !Ref MySQLPort
-  #        SourceSecurityGroupId: !Ref InstanceSecurityGroup
-          
+
 
 Outputs:
   InstanceSubnet:
@@ -211,19 +186,13 @@ Outputs:
   
   DAXSubnet2:
     Value: !Ref DAXSubnet2
-  
-  #InstanceSubnetRouteTable:
-  #  Value: !Ref InstanceSubnetRouteTable
-    
+
   InstanceSecurityGroup:
     Value: !Ref InstanceSecurityGroup
     
   FunctionSecurityGroup:
     Value: !Ref FunctionSecurityGroup
-    
-  #EndpointSecurityGroup:
-  #  Value: !Ref EndpointSecurityGroup
-    
+
   DAXSecurityGroup:
     Value: !Ref DAXSecurityGroup
     
