@@ -1,9 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 
 Parameters:
-  #BucketArn:
-  #  Type: String
-  
   DAXClusterArn:
     Type: String
     
@@ -21,22 +18,7 @@ Parameters:
 
   InstanceType:
     Type: String
-    
-  #Prefix:
-  #  Type: String
-    
-  #PrivateSubnet1:
-  #  Type: String
-  #  
-  #PrivateSubnet2:
-  #  Type: String
-  
-  #PrivateSubnet:
-  #  Type: String
-    
-  #UserData:
-  #  Type: String
-    
+
 
 Resources:
   Instance:
@@ -56,20 +38,6 @@ Resources:
         wget http://docs.aws.amazon.com/amazondynamodb/latest/developerguide/samples/TryDax.zip
         unzip TryDax.zip
         
-            
-  #Instance2:
-  #  Type: AWS::EC2::Instance
-  #  Properties:
-  #    IamInstanceProfile: !Ref InstanceProfile
-  #    ImageId: !Ref ImageId
-  #    InstanceType: !Ref InstanceType
-  #    NetworkInterfaces:
-  #      - DeviceIndex: 0
-  #        SubnetId: !Ref PrivateSubnet2
-  #        GroupSet:
-  #          - !Ref InstanceSecurityGroup
-  #    #UserData: !Ref UserData
-
   InstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:
@@ -98,17 +66,11 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
-                  #- s3:GetObject
                   - "dax:*"
                 Resource:
                   - !Ref DAXClusterArn
-                  #- !Ref BucketArn
-                  #- !Sub "${BucketArn}/*"
-                  #- !Sub "arn:aws:s3:::amazonlinux.${AWS::Region}.amazonaws.com/*"
-                  #- !Sub "arn:aws:s3:::amazonlinux-2-repos-${AWS::Region}/*"
               - Effect: Allow
                 Action:
-                  #- s3:GetObject
                   - "dynamodb:*"
                 Resource:
                   - !Ref DynamoDBTableArn
