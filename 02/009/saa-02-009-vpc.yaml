@@ -1,0 +1,231 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  AvailabilityZone1:
+    Type: String
+    
+  AvailabilityZone2:
+    Type: String
+    
+  CidrIp1:
+    Type: String
+    
+  CidrIp2:
+    Type: String
+    
+  CidrIp3:
+    Type: String
+    
+  CidrIp4:
+    Type: String
+    
+  CidrIp5:
+    Type: String
+    
+  DAXPort:
+    Type: Number
+    
+  HTTPSPort:
+    Type: Number
+    
+  Prefix:
+    Type: String
+
+  VPCCidrBlock:
+    Type: String
+    
+    
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VPCCidrBlock
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      
+  IGW:
+    Type: AWS::EC2::InternetGateway
+  
+  IGWAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref IGW
+      
+  EIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+          
+  NATGateway:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt EIP.AllocationId
+      SubnetId: !Ref PublicSubnet
+      
+      
+  InstanceSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Sub "${AWS::Region}${AvailabilityZone1}"
+      CidrBlock: !Ref CidrIp1
+      VpcId: !Ref VPC
+      
+  FunctionSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Sub "${AWS::Region}${AvailabilityZone2}"
+      CidrBlock: !Ref CidrIp2
+      VpcId: !Ref VPC
+      
+  DAXSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Sub "${AWS::Region}${AvailabilityZone1}"
+      CidrBlock: !Ref CidrIp3
+      VpcId: !Ref VPC
+      
+  DAXSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Sub "${AWS::Region}${AvailabilityZone2}"
+      CidrBlock: !Ref CidrIp4
+      VpcId: !Ref VPC
+      
+  PublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Sub "${AWS::Region}${AvailabilityZone1}"
+      CidrBlock: !Ref CidrIp5
+      VpcId: !Ref VPC
+      
+      
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      
+  RouteToInternet:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref IGW
+  
+  PublicSubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet
+      RouteTableId: !Ref PublicRouteTable
+      
+      
+  InstanceSubnetRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      
+  RouteToNATGateway:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref InstanceSubnetRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NATGateway
+      
+  InstanceSubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref InstanceSubnet
+      RouteTableId: !Ref InstanceSubnetRouteTable
+      
+
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub "${Prefix}-InstanceSecurityGroup"
+      GroupDescription: Deny All.
+      VpcId: !Ref VPC
+      
+  FunctionSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub "${Prefix}-FunctionSecurityGroup"
+      GroupDescription: Allow HTTPS.
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: !Ref HTTPSPort
+          ToPort: !Ref HTTPSPort
+          CidrIp: 0.0.0.0/0
+          #SourceSecurityGroupId: !Ref InstanceSecurityGroup
+      
+  #EndpointSecurityGroup:
+  #  Type: AWS::EC2::SecurityGroup
+  #  Properties:
+  #    GroupName: !Sub "${Prefix}-EndpointSecurityGroup"
+  #    GroupDescription: Allow HTTPS from InstanceSecurityGroup.
+  #    VpcId: !Ref VPC
+  #    SecurityGroupIngress:
+  #      - IpProtocol: tcp
+  #        FromPort: !Ref HTTPSPort
+  #        ToPort: !Ref HTTPSPort
+  #        SourceSecurityGroupId: !Ref InstanceSecurityGroup
+      
+  DAXSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub "${Prefix}-DAXSecurityGroup"
+      GroupDescription: Allow DAX.
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: !Ref DAXPort
+          ToPort: !Ref DAXPort
+          SourceSecurityGroupId: !Ref InstanceSecurityGroup
+        - IpProtocol: tcp
+          FromPort: !Ref DAXPort
+          ToPort: !Ref DAXPort
+          SourceSecurityGroupId: !Ref FunctionSecurityGroup
+          
+  #DBSecurityGroup:
+  #  Type: AWS::EC2::SecurityGroup
+  #  Properties:
+  #    GroupName: !Sub "${Prefix}-DBSecurityGroup"
+  #    GroupDescription: Allow MySQL from InstanceSecurityGroup.
+  #    VpcId: !Ref VPC
+  #    SecurityGroupIngress:
+  #      - IpProtocol: tcp
+  #        FromPort: !Ref MySQLPort
+  #        ToPort: !Ref MySQLPort
+  #        SourceSecurityGroupId: !Ref InstanceSecurityGroup
+          
+
+Outputs:
+  InstanceSubnet:
+    Value: !Ref InstanceSubnet
+    
+  FunctionSubnet:
+    Value: !Ref FunctionSubnet
+    
+  DAXSubnet1:
+    Value: !Ref DAXSubnet1
+  
+  DAXSubnet2:
+    Value: !Ref DAXSubnet2
+  
+  #InstanceSubnetRouteTable:
+  #  Value: !Ref InstanceSubnetRouteTable
+    
+  InstanceSecurityGroup:
+    Value: !Ref InstanceSecurityGroup
+    
+  FunctionSecurityGroup:
+    Value: !Ref FunctionSecurityGroup
+    
+  #EndpointSecurityGroup:
+  #  Value: !Ref EndpointSecurityGroup
+    
+  DAXSecurityGroup:
+    Value: !Ref DAXSecurityGroup
+    
+  VPC:
+    Value: !Ref VPC

@@ -1,0 +1,117 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  AvailabilityZone1:
+    Type: String
+    
+  AvailabilityZone2:
+    Type: String
+    
+  DAXNodeType:
+    Type: String
+    
+  DAXSecurityGroup:
+    Type: String
+    
+  DAXSubnet1:
+    Type: String
+    
+  DAXSubnet2:
+    Type: String
+    
+  #DynamoDBTable:
+  #  Type: String
+    
+  DynamoDBTableArn:
+    Type: String
+  
+  Prefix:
+    Type: String
+
+
+Resources:
+  DAXCluster:
+    Type: AWS::DAX::Cluster
+    Properties: 
+      AvailabilityZones: 
+        - !Sub "${AWS::Region}${AvailabilityZone1}"
+        - !Sub "${AWS::Region}${AvailabilityZone2}"
+      ClusterEndpointEncryptionType: NONE
+      ClusterName: !Sub "${Prefix}-Cluster"
+      Description: Test DAX Cluster
+      IAMRoleARN: !GetAtt DAXRole.Arn
+      NodeType: !Ref DAXNodeType
+      #NotificationTopicARN: String
+      ParameterGroupName: !Ref DAXParameterGroup
+      #PreferredMaintenanceWindow: String
+      ReplicationFactor: 2
+      SecurityGroupIds: 
+        - !Ref DAXSecurityGroup
+      #SSESpecification: 
+      #  SSESpecification
+      SubnetGroupName: !Ref DAXSubnetGroup
+      #Tags: Json
+      
+  DAXParameterGroup:
+    Type: AWS::DAX::ParameterGroup
+    Properties: 
+      Description: Test DAX Parameter Group
+      ParameterGroupName: !Sub "${Prefix}-ParameterGroup"
+      ParameterNameValues:
+        query-ttl-millis: 75000
+        record-ttl-millis: 88000
+        
+  DAXSubnetGroup:
+    Type: AWS::DAX::SubnetGroup
+    Properties: 
+      Description: Test DAX Subnet Group
+      SubnetGroupName: !Sub "${Prefix}SubnetGroup"
+      SubnetIds: 
+        - !Ref DAXSubnet1
+        - !Ref DAXSubnet2
+      
+  DAXRole:
+    Type: AWS::IAM::Role
+    DeletionPolicy: Delete
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Principal:
+              Service:
+                - dax.amazonaws.com
+      #ManagedPolicyArns:
+      #  - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: !Sub "${Prefix}-DAXPolicy"
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:DescribeTable
+                  - dynamodb:PutItem
+                  - dynamodb:GetItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                  - dynamodb:BatchGetItem
+                  - dynamodb:BatchWriteItem
+                  - dynamodb:ConditionCheckItem
+                Resource:
+                  #- !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${DynamoDBTable}"
+                  - !Ref DynamoDBTableArn
+                  
+                  
+Outputs:
+  DAXClusterArn:
+    Value: !GetAtt DAXCluster.Arn
+    
+  #DAXClusterDiscoveryEndpoint:
+  #  Value: !GetAtt DAXCluster.ClusterDiscoveryEndpoint
+    
+  DAXClusterDiscoveryEndpointURL:
+    Value: !GetAtt DAXCluster.ClusterDiscoveryEndpointURL

@@ -1,0 +1,175 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  TemplateBucketName:
+    Type: String
+    Default: awstut-bucket
+    
+  Prefix:
+    Type: String
+    Default: saa-02-009
+    
+  AvailabilityZone1:
+    Type: String
+    Default: a
+    
+  AvailabilityZone2:
+    Type: String
+    Default: c
+    
+  DAXNodeType:
+    Type: String
+    Default: dax.t3.small
+    
+  DAXPort:
+    Type: Number
+    Default: 8111
+    
+  ImageId:
+    Type: String
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-arm64-gp2
+    
+  InstanceType:
+    Type: String
+    Default: t4g.nano
+
+  HTTPSPort:
+    Type: Number
+    Default: 443
+    
+  LambdaArchitecture:
+    Type: String
+    Default: arm64
+    
+  LambdaEphemeralStorageSize:
+    Type: Number
+    Default: 512
+    
+  LambdaHandler:
+    Type: String
+    Default: index.lambda_handler
+    
+  LambdaLayerPackage:
+    Type: String
+    Default: layer.zip
+    
+  LambdaRuntime:
+    Type: String
+    Default: python3.8
+    
+  LambdaTimeout:
+    Type: Number
+    Default: 300
+    
+  ProvisionedThroughputReadCapacityUnits:
+    Type: Number
+    Default: 10
+    
+  ProvisionedThroughputWriteCapacityUnits:
+    Type: Number
+    Default: 10
+    
+    
+Resources:
+  VPCStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-vpc.yaml"
+      Parameters:
+        AvailabilityZone1: !Ref AvailabilityZone1
+        AvailabilityZone2: !Ref AvailabilityZone2
+        CidrIp1: 10.0.1.0/24
+        CidrIp2: 10.0.2.0/24
+        CidrIp3: 10.0.3.0/24
+        CidrIp4: 10.0.4.0/24
+        CidrIp5: 10.0.5.0/24
+        DAXPort: !Ref DAXPort
+        HTTPSPort: !Ref HTTPSPort
+        Prefix: !Ref Prefix
+        VPCCidrBlock: 10.0.0.0/16
+        
+  #EndpointStack:
+  #  Type: AWS::CloudFormation::Stack
+  #  DependsOn:
+  #    - VPCStack
+  #  Properties:
+  #    TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-endpoint.yaml"
+  #    Parameters:
+  #      EndpointSecurityGroup: !GetAtt VPCStack.Outputs.EndpointSecurityGroup
+  #      InstanceSubnet: !GetAtt VPCStack.Outputs.InstanceSubnet
+  #      #InstanceSubnetRouteTable: !GetAtt VPCStack.Outputs.InstanceSubnetRouteTable
+  #      Prefix: !Ref Prefix
+  #      VPC: !GetAtt VPCStack.Outputs.VPC
+        
+  DynamodbStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-dynamodb.yaml"
+      Parameters:
+        Prefix: !Ref Prefix
+        ReadCapacityUnits: !Ref ProvisionedThroughputReadCapacityUnits
+        WriteCapacityUnits: !Ref ProvisionedThroughputWriteCapacityUnits
+        
+  DAXStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn:
+      - VPCStack
+    Properties:
+      TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-dax.yaml"
+      Parameters:
+        AvailabilityZone1: !Ref AvailabilityZone1
+        AvailabilityZone2: !Ref AvailabilityZone2
+        DAXNodeType: !Ref DAXNodeType
+        DAXSecurityGroup: !GetAtt VPCStack.Outputs.DAXSecurityGroup
+        DAXSubnet1: !GetAtt VPCStack.Outputs.DAXSubnet1
+        DAXSubnet2: !GetAtt VPCStack.Outputs.DAXSubnet2
+        #DynamoDBTable: !GetAtt DynamodbStack.Outputs.Table
+        DynamoDBTableArn: !GetAtt DynamodbStack.Outputs.TableArn
+        Prefix: !Ref Prefix
+        
+  EC2Stack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn:
+      - VPCStack
+      #- EndpointStack
+    Properties:
+      TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-ec2.yaml"
+      Parameters:
+        #BucketArn: !GetAtt S3Stack.Outputs.BucketArn
+        DAXClusterArn: !GetAtt DAXStack.Outputs.DAXClusterArn
+        DynamoDBTableArn: !GetAtt DynamodbStack.Outputs.TableArn
+        ImageId: !Ref ImageId
+        InstanceSecurityGroup: !GetAtt VPCStack.Outputs.InstanceSecurityGroup
+        InstanceSubnet: !GetAtt VPCStack.Outputs.InstanceSubnet
+        InstanceType: !Ref InstanceType
+        #Prefix: !Ref Prefix
+        #PrivateSubnet1: !GetAtt VPCStack.Outputs.PrivateSubnet1
+        #PrivateSubnet2: !GetAtt VPCStack.Outputs.PrivateSubnet2
+        #PrivateSubnet: !GetAtt VPCStack1.Outputs.PrivateSubnet
+  
+  LambdaStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn:
+      - VPCStack
+      - DynamodbStack
+    Properties:
+      TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-lambda.yaml"
+      Parameters:
+        Architecture: !Ref LambdaArchitecture
+        #CodeS3Bucket: !GetAtt S3Bucket.Outputs.Bucket
+        #CodeS3Bucket: !Ref TemplateBucketName
+        #CodeS3Key: !Sub "${Prefix}/${LambdaPackage}"
+        DAXClusterArn: !GetAtt DAXStack.Outputs.DAXClusterArn
+        DAXClusterDiscoveryEndpointURL: !GetAtt DAXStack.Outputs.DAXClusterDiscoveryEndpointURL
+        DynamoDBTable: !GetAtt DynamodbStack.Outputs.Table
+        EphemeralStorageSize: !Ref LambdaEphemeralStorageSize
+        FunctionSecurityGroup: !GetAtt VPCStack.Outputs.FunctionSecurityGroup
+        FunctionSubnet: !GetAtt VPCStack.Outputs.FunctionSubnet
+        Handler: !Ref LambdaHandler
+        LayerPackage: !Ref LambdaLayerPackage
+        LayerS3Bucket: !Ref TemplateBucketName
+        LayerS3Key: !Sub "${Prefix}/${LambdaLayerPackage}"
+        Prefix: !Ref Prefix
+        #RequirementsParameter: !GetAtt SSMStack.Outputs.RequirementsParameter
+        Runtime: !Ref LambdaRuntime
+        Timeout: !Ref LambdaTimeout

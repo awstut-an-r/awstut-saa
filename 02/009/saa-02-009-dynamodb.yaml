@@ -1,0 +1,65 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  Prefix:
+    Type: String
+    
+  ReadCapacityUnits:
+    Type: Number
+    
+  WriteCapacityUnits:
+    Type: Number
+
+
+Resources:
+  Table:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: partition_key
+          AttributeType: N
+        - AttributeName: sort_key
+          AttributeType: N
+      BillingMode: PROVISIONED
+      #GlobalSecondaryIndexes:
+      #  - IndexName: gsi-service-rating
+      #    KeySchema:
+      #      - AttributeName: service
+      #        KeyType: HASH
+      #      - AttributeName: rating
+      #        KeyType: RANGE
+      #    Projection:
+      #      NonKeyAttributes:
+      #        - user
+      #        - comment
+      #      ProjectionType: INCLUDE
+      KeySchema:
+        - AttributeName: partition_key
+          KeyType: HASH
+        - AttributeName: sort_key
+          KeyType: RANGE
+      #LocalSecondaryIndexes:
+      #  - IndexName: lsi-user-datetime
+      #    KeySchema:
+      #      - AttributeName: user
+      #        KeyType: HASH
+      #      - AttributeName: datetime
+      #        KeyType: RANGE
+      #    Projection:
+      #      NonKeyAttributes:
+      #        - service
+      #        - comment
+      #      ProjectionType: INCLUDE
+      ProvisionedThroughput:
+        ReadCapacityUnits: !Ref ReadCapacityUnits
+        WriteCapacityUnits: !Ref WriteCapacityUnits
+      TableClass: STANDARD
+      TableName: TryDaxTable
+
+
+Outputs:
+  Table:
+    Value: !Ref Table
+  
+  TableArn:
+    Value: !GetAtt Table.Arn
