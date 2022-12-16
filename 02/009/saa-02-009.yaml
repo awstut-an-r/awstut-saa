@@ -87,20 +87,7 @@ Resources:
         HTTPSPort: !Ref HTTPSPort
         Prefix: !Ref Prefix
         VPCCidrBlock: 10.0.0.0/16
-        
-  #EndpointStack:
-  #  Type: AWS::CloudFormation::Stack
-  #  DependsOn:
-  #    - VPCStack
-  #  Properties:
-  #    TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-endpoint.yaml"
-  #    Parameters:
-  #      EndpointSecurityGroup: !GetAtt VPCStack.Outputs.EndpointSecurityGroup
-  #      InstanceSubnet: !GetAtt VPCStack.Outputs.InstanceSubnet
-  #      #InstanceSubnetRouteTable: !GetAtt VPCStack.Outputs.InstanceSubnetRouteTable
-  #      Prefix: !Ref Prefix
-  #      VPC: !GetAtt VPCStack.Outputs.VPC
-        
+
   DynamodbStack:
     Type: AWS::CloudFormation::Stack
     Properties:
@@ -123,7 +110,6 @@ Resources:
         DAXSecurityGroup: !GetAtt VPCStack.Outputs.DAXSecurityGroup
         DAXSubnet1: !GetAtt VPCStack.Outputs.DAXSubnet1
         DAXSubnet2: !GetAtt VPCStack.Outputs.DAXSubnet2
-        #DynamoDBTable: !GetAtt DynamodbStack.Outputs.Table
         DynamoDBTableArn: !GetAtt DynamodbStack.Outputs.TableArn
         Prefix: !Ref Prefix
         
@@ -131,21 +117,15 @@ Resources:
     Type: AWS::CloudFormation::Stack
     DependsOn:
       - VPCStack
-      #- EndpointStack
     Properties:
       TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-ec2.yaml"
       Parameters:
-        #BucketArn: !GetAtt S3Stack.Outputs.BucketArn
         DAXClusterArn: !GetAtt DAXStack.Outputs.DAXClusterArn
         DynamoDBTableArn: !GetAtt DynamodbStack.Outputs.TableArn
         ImageId: !Ref ImageId
         InstanceSecurityGroup: !GetAtt VPCStack.Outputs.InstanceSecurityGroup
         InstanceSubnet: !GetAtt VPCStack.Outputs.InstanceSubnet
         InstanceType: !Ref InstanceType
-        #Prefix: !Ref Prefix
-        #PrivateSubnet1: !GetAtt VPCStack.Outputs.PrivateSubnet1
-        #PrivateSubnet2: !GetAtt VPCStack.Outputs.PrivateSubnet2
-        #PrivateSubnet: !GetAtt VPCStack1.Outputs.PrivateSubnet
   
   LambdaStack:
     Type: AWS::CloudFormation::Stack
@@ -156,9 +136,6 @@ Resources:
       TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-lambda.yaml"
       Parameters:
         Architecture: !Ref LambdaArchitecture
-        #CodeS3Bucket: !GetAtt S3Bucket.Outputs.Bucket
-        #CodeS3Bucket: !Ref TemplateBucketName
-        #CodeS3Key: !Sub "${Prefix}/${LambdaPackage}"
         DAXClusterArn: !GetAtt DAXStack.Outputs.DAXClusterArn
         DAXClusterDiscoveryEndpointURL: !GetAtt DAXStack.Outputs.DAXClusterDiscoveryEndpointURL
         DynamoDBTable: !GetAtt DynamodbStack.Outputs.Table
@@ -170,6 +147,5 @@ Resources:
         LayerS3Bucket: !Ref TemplateBucketName
         LayerS3Key: !Sub "${Prefix}/${LambdaLayerPackage}"
         Prefix: !Ref Prefix
-        #RequirementsParameter: !GetAtt SSMStack.Outputs.RequirementsParameter
         Runtime: !Ref LambdaRuntime
         Timeout: !Ref LambdaTimeout
