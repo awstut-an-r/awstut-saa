@@ -1,0 +1,30 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  TemplateBucketName:
+    Type: String
+    Default: awstut-bucket
+    
+  TemplateBucketFolder:
+    Type: String
+    Default: saa-01-003
+    
+  Prefix:
+    Type: String
+    Default: saa-01-003-1
+    
+  ReplicationBucketName:
+    Type: String
+    Default: saa-01-003-2
+    
+    
+Resources:
+  S3Stack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${TemplateBucketFolder}/${Prefix}-s3.yaml"
+      Parameters:
+        Prefix: !Ref Prefix
+        ReplicationBucketName: !Ref ReplicationBucketName
+        #ReplicationBucketArn:
+        #  Fn::ImportValue: !Sub "${ReplicationStackPrefix}-ReplicationBucketArn"

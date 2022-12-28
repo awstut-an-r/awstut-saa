@@ -1,0 +1,22 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  Prefix:
+    Type: String
+    
+
+Resources:
+  ReplicationBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: Private
+      BucketName: !Ref Prefix
+      VersioningConfiguration:
+        Status: Enabled
+      
+      
+Outputs:
+  ReplicationBucketArn:
+    Value: !GetAtt ReplicationBucket.Arn
+    #Export:
+    #  Name: !Sub "${Prefix}-ReplicationBucketArn"

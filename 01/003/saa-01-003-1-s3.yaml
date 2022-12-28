@@ -1,0 +1,65 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  Prefix:
+    Type: String
+    
+  ReplicationBucketName:
+    Type: String
+    
+
+Resources:
+  Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: Private
+      BucketName: !Ref Prefix
+      ReplicationConfiguration:
+        Role: !GetAtt S3BucketReplicationRole.Arn
+        Rules:
+          - Destination:
+              Bucket: !Sub "arn:aws:s3:::${ReplicationBucketName}"
+            Status: Enabled
+      VersioningConfiguration:
+        Status: Enabled
+      
+  S3BucketReplicationRole:
+    Type: AWS::IAM::Role
+    DeletionPolicy: Delete
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Principal:
+              Service:
+                - s3.amazonaws.com
+      Policies:
+        - PolicyName: !Sub "${Prefix}-S3BucketReplicationPolicy"
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetReplicationConfiguration
+                  - s3:ListBucket
+                Resource:
+                  #- !Sub arn:aws:s3:::${Prefix}-${MainBucketName}
+                  - !Sub "arn:aws:s3:::${Prefix}"
+              - Effect: Allow
+                Action:
+                  - s3:GetObjectVersionForReplication
+                  - s3:GetObjectVersionAcl
+                  - s3:GetObjectVersionTagging
+                Resource:
+                  #- !Sub arn:aws:s3:::${Prefix}-${MainBucketName}/*
+                  - !Sub "arn:aws:s3:::${Prefix}/*"
+              - Effect: Allow
+                Action:
+                  - s3:ReplicateObject
+                  - s3:ReplicateDelete
+                  - s3:ReplicateTags
+                Resource:
+                  #- !Sub arn:aws:s3:::${Prefix}-${BackupBucketName}/*
+                  - !Sub "arn:aws:s3:::${ReplicationBucketName}/*"
