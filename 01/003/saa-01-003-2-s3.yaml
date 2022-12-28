@@ -18,5 +18,3 @@ Resources:
 Outputs:
   ReplicationBucketArn:
     Value: !GetAtt ReplicationBucket.Arn
-    #Export:
-    #  Name: !Sub "${Prefix}-ReplicationBucketArn"
