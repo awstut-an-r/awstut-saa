@@ -26,5 +26,3 @@ Resources:
       Parameters:
         Prefix: !Ref Prefix
         ReplicationBucketName: !Ref ReplicationBucketName
-        #ReplicationBucketArn:
-        #  Fn::ImportValue: !Sub "${ReplicationStackPrefix}-ReplicationBucketArn"
