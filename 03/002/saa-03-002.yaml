@@ -1,0 +1,204 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  TemplateBucketName:
+    Type: String
+    Default: awstut-bucket
+    
+  Prefix:
+    Type: String
+    Default: saa-03-002
+    
+  AvailabilityZone:
+    Type: String
+    Default: a
+    
+  CidrIp:
+    Type: String
+    Default: 10.0.1.0/24
+    
+  #CidrIp2:
+  #  Type: String
+  #  Default: 10.0.2.0/24
+    
+  HTTPPort:
+    Type: Number
+    Default: 80
+    
+  HTTPSPort:
+    Type: Number
+    Default: 443
+  
+  ImageId:
+    #Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Type: String
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-arm64-gp2
+    
+  #InstanceSize:
+  #  Type: Number
+  #  Default: 2
+  #  #Default: 1
+    
+  #InstanceTagKey:
+  #  Type: String
+  #  Default: Server
+  #  
+  #  
+  #InstanceTagValueApp:
+  #  Type: String
+  #  Default: App
+  #  
+  #InstanceTagValueWeb1:
+  #  Type: String
+  #  Default: ApacheWeb
+  #  
+  #InstanceTagValueWeb2:
+  #  Type: String
+  #  Default: NginxWeb
+    
+  InstanceType:
+    Type: String
+    #Default: t4g.nano
+    Default: t4g.micro
+  
+  #UWSGIPort:
+  #  Type: Number
+  #  Default: 9090
+    
+  VPCCidrBlock:
+    Type: String
+    Default: 10.0.0.0/16
+  
+
+Resources:
+  VPC1Stack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-vpc-01.yaml"
+      Parameters:
+        AvailabilityZone: !Ref AvailabilityZone
+        #AvailabilityZone2: d
+        CidrIp: !Ref CidrIp
+        #CidrIp2: !Ref CidrIp2
+        HTTPPort: !Ref HTTPPort
+        #HTTPSPort: !Ref HTTPSPort
+        Prefix: !Ref Prefix
+        #UWSGIPort: !Ref UWSGIPort
+        VPCCidrBlock: !Ref VPCCidrBlock
+        
+  VPC1EndpointStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn:
+      - VPC1Stack
+    Properties:
+      TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-vpc-01-endpoint.yaml"
+      Parameters:
+        #EndpointSecurityGroup: !GetAtt VPCStack.Outputs.EndpointSecurityGroup
+        #Prefix: !Ref Prefix
+        PrivateRouteTable: !GetAtt VPC1Stack.Outputs.PrivateRouteTable
+        #PrivateSubnet1: !GetAtt VPCStack.Outputs.PrivateSubnet1
+        #PrivateSubnet2: !GetAtt VPCStack.Outputs.PrivateSubnet2
+        VPC: !GetAtt VPC1Stack.Outputs.VPC
+        
+  VPC1EC2Stack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn:
+      #- VPC1Stack
+      - VPC1EndpointStack
+    Properties:
+      TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-vpc-01-ec2.yaml"
+      Parameters:
+        HTTPPort: !Ref HTTPPort
+        ImageId: !Ref ImageId
+        #InstanceSecurityGroup1: !GetAtt VPCStack.Outputs.InstanceSecurityGroup1
+        #InstanceSecurityGroup2: !GetAtt VPCStack.Outputs.InstanceSecurityGroup2
+        #InstanceProfile: !GetAtt IAMStack.Outputs.InstanceProfile
+        #InstanceTagKey: !Ref InstanceTagKey
+        #InstanceTagValueWeb1: !Ref InstanceTagValueWeb1
+        #InstanceTagValueWeb2: !Ref InstanceTagValueWeb2
+        InstanceSecurityGroup: !GetAtt VPC1Stack.Outputs.InstanceSecurityGroup
+        InstanceType: !Ref InstanceType
+        #PlaybookBucket: !Ref TemplateBucketName
+        Prefix: !Ref Prefix
+        #PublicSubnet: !GetAtt VPC1Stack.Outputs.PublicSubnet
+        #PublicSubnet2: !GetAtt VPCStack.Outputs.PublicSubnet2
+        PrivateSubnet: !GetAtt VPC1Stack.Outputs.PrivateSubnet
+        #PrivateSubnet2: !GetAtt VPCStack.Outputs.PrivateSubnet2
+        VPC: !GetAtt VPC1Stack.Outputs.VPC
+        
+  VPC1NLBStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn:
+      - VPC1EC2Stack
+    Properties:
+      TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-vpc-01-nlb.yaml"
+      Parameters:
+        Instance: !GetAtt VPC1EC2Stack.Outputs.Instance
+        #Instance1: !GetAtt EC2Stack.Outputs.Instance1
+        #Instance2: !GetAtt EC2Stack.Outputs.Instance2
+        HTTPPort: !Ref HTTPPort
+        Prefix: !Ref Prefix
+        PrivateSubnet: !GetAtt VPC1Stack.Outputs.PrivateSubnet
+        #PrivateSubnet2: !GetAtt VPCStack.Outputs.PrivateSubnet2
+        #UWSGIPort: !Ref UWSGIPort
+        VPC: !GetAtt VPC1Stack.Outputs.VPC
+        #HealthyThresholdCount: 2
+        #UnhealthyThresholdCount: 2
+        #HealthCheckIntervalSeconds: 10
+        
+  VPC2Stack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-vpc-02.yaml"
+      Parameters:
+        AvailabilityZone: !Ref AvailabilityZone
+        #AvailabilityZone2: d
+        CidrIp: !Ref CidrIp
+        #CidrIp2: !Ref CidrIp2
+        HTTPPort: !Ref HTTPPort
+        HTTPSPort: !Ref HTTPSPort
+        Prefix: !Ref Prefix
+        #UWSGIPort: !Ref UWSGIPort
+        VPCCidrBlock: !Ref VPCCidrBlock
+        
+  VPC2EndpointStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn:
+      - VPC2Stack
+    Properties:
+      TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-vpc-02-endpoint.yaml"
+      Parameters:
+        SSMEndpointSecurityGroup: !GetAtt VPC2Stack.Outputs.SSMEndpointSecurityGroup
+        NLBEndpointSecurityGroup: !GetAtt VPC2Stack.Outputs.NLBEndpointSecurityGroup
+        #Prefix: !Ref Prefix
+        #PrivateRouteTable: !GetAtt VPC1Stack.Outputs.PrivateRouteTable
+        PrivateSubnet: !GetAtt VPC2Stack.Outputs.PrivateSubnet
+        #PrivateSubnet2: !GetAtt VPCStack.Outputs.PrivateSubnet2
+        VPC: !GetAtt VPC2Stack.Outputs.VPC
+        VPCEndpointService: !GetAtt VPC1NLBStack.Outputs.VPCEndpointService
+        
+  VPC2EC2Stack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn:
+      - VPC2Stack
+      #- VPC2EndpointStack
+    Properties:
+      TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-vpc-02-ec2.yaml"
+      Parameters:
+        HTTPPort: !Ref HTTPPort
+        ImageId: !Ref ImageId
+        #InstanceSecurityGroup1: !GetAtt VPCStack.Outputs.InstanceSecurityGroup1
+        #InstanceSecurityGroup2: !GetAtt VPCStack.Outputs.InstanceSecurityGroup2
+        #InstanceProfile: !GetAtt IAMStack.Outputs.InstanceProfile
+        #InstanceTagKey: !Ref InstanceTagKey
+        #InstanceTagValueWeb1: !Ref InstanceTagValueWeb1
+        #InstanceTagValueWeb2: !Ref InstanceTagValueWeb2
+        InstanceSecurityGroup: !GetAtt VPC2Stack.Outputs.InstanceSecurityGroup
+        InstanceType: !Ref InstanceType
+        #PlaybookBucket: !Ref TemplateBucketName
+        Prefix: !Ref Prefix
+        #PublicSubnet: !GetAtt VPC2Stack.Outputs.PublicSubnet
+        #PublicSubnet2: !GetAtt VPCStack.Outputs.PublicSubnet2
+        PrivateSubnet: !GetAtt VPC2Stack.Outputs.PrivateSubnet
+        #PrivateSubnet2: !GetAtt VPCStack.Outputs.PrivateSubnet2
+        VPC: !GetAtt VPC2Stack.Outputs.VPC

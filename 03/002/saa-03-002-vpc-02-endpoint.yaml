@@ -1,0 +1,78 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  SSMEndpointSecurityGroup:
+    Type: String
+    
+  NLBEndpointSecurityGroup:
+    Type: String
+
+  #PlaybookBucketArn:
+  #  Type: String
+    
+  #Prefix:
+  #  Type: String
+    
+  #PrivateRouteTable:
+  #  Type: String
+    
+  PrivateSubnet:
+    Type: String
+    
+  VPC:
+    Type: String
+    
+  VPCEndpointService:
+    Type: String
+    
+
+Resources:
+  NLBEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      #PrivateDnsEnabled: true
+      PrivateDnsEnabled: false
+      SecurityGroupIds:
+        - !Ref NLBEndpointSecurityGroup
+      #ServiceName: !Sub "com.amazonaws.${AWS::Region}.ssm"
+      ServiceName: !Sub "com.amazonaws.vpce.${AWS::Region}.${VPCEndpointService}"
+      SubnetIds:
+        - !Ref PrivateSubnet
+      VpcEndpointType: Interface
+      VpcId: !Ref VPC
+      
+  SSMEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      PrivateDnsEnabled: true
+      SecurityGroupIds:
+        - !Ref SSMEndpointSecurityGroup
+      ServiceName: !Sub "com.amazonaws.${AWS::Region}.ssm"
+      SubnetIds:
+        - !Ref PrivateSubnet
+      VpcEndpointType: Interface
+      VpcId: !Ref VPC
+      
+  EC2MessagesEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      PrivateDnsEnabled: true
+      SecurityGroupIds:
+        - !Ref SSMEndpointSecurityGroup
+      ServiceName: !Sub "com.amazonaws.${AWS::Region}.ec2messages"
+      SubnetIds:
+        - !Ref PrivateSubnet
+      VpcEndpointType: Interface
+      VpcId: !Ref VPC
+        
+  SSMMessagesEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      PrivateDnsEnabled: true
+      SecurityGroupIds:
+        - !Ref SSMEndpointSecurityGroup
+      ServiceName: !Sub "com.amazonaws.${AWS::Region}.ssmmessages"
+      SubnetIds:
+        - !Ref PrivateSubnet
+      VpcEndpointType: Interface
+      VpcId: !Ref VPC
