@@ -2,13 +2,7 @@ AWSTemplateFormatVersion: 2010-09-09
 Parameters:
   Instance:
     Type: String
-  
-  #Instance1:
-  #  Type: String
-  #  
-  #Instance2:
-  #  Type: String
-  
+
   HTTPPort:
     Type: String
 
@@ -17,24 +11,9 @@ Parameters:
     
   PrivateSubnet:
     Type: String
-    
-  #PrivateSubnet2:
-  #  Type: String
-    
-  #UWSGIPort:
-  #  Type: Number
-    
+
   VPC:
     Type: String
-    
-  #HealthyThresholdCount:
-  #  Type: Number
-  #  
-  #UnhealthyThresholdCount:
-  #  Type: Number
-  #  
-  #HealthCheckIntervalSeconds:
-  #  Type: Number
 
 
 Resources:
@@ -43,28 +22,17 @@ Resources:
     Properties:
       Name: !Sub "${Prefix}-NLB"
       Scheme: internal
-      #SecurityGroups:
-      #  - Fn::ImportValue: !Sub ${Prefix}-WebSecurityGroup
       Subnets:
         - !Ref PrivateSubnet
-        #- !Ref PrivateSubnet2
       Type: network
       
   NLBTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
       Name: !Sub "${Prefix}-NLBTargetGroup"
-      #Protocol: HTTP
       Protocol: TCP
       Port: !Ref HTTPPort
-      #TargetGroupAttributes:
-      #  - Key: preserve_client_ip.enabled
-      #    Value: false
       VpcId: !Ref VPC
-      #HealthCheckProtocol: TCP
-      #HealthyThresholdCount: !Ref HealthyThresholdCount
-      #UnhealthyThresholdCount: !Ref UnhealthyThresholdCount
-      #HealthCheckIntervalSeconds: !Ref HealthCheckIntervalSeconds
       Targets:
         - Id: !Ref Instance
         
@@ -82,27 +50,10 @@ Resources:
     Type: AWS::EC2::VPCEndpointService
     Properties: 
       AcceptanceRequired: false
-      #ContributorInsightsEnabled: Boolean
-      #GatewayLoadBalancerArns: 
-      #  - String
       NetworkLoadBalancerArns: 
         - !Ref NLB
-      #PayerResponsibility: String
 
 
 Outputs:
   VPCEndpointService:
     Value: !Ref VPCEndpointService
-
-  #NLBDNSName:
-  #  Value: !GetAtt NLB.DNSName
-  #  #Export:
-  #  #  Name: !Sub ${Prefix}-ALBDNSName
-  #  
-  #NLBLoadBalancerName:
-  #  Value: !GetAtt NLB.LoadBalancerName
-  #    
-  #NLBTargetGroup:
-  #  Value: !Ref NLBTargetGroup
-  #  #Export:
-  #  #  Name: !Sub ${Prefix}-NLBTargetGroup
