@@ -7,15 +7,6 @@ Parameters:
   NLBEndpointSecurityGroup:
     Type: String
 
-  #PlaybookBucketArn:
-  #  Type: String
-    
-  #Prefix:
-  #  Type: String
-    
-  #PrivateRouteTable:
-  #  Type: String
-    
   PrivateSubnet:
     Type: String
     
@@ -30,11 +21,9 @@ Resources:
   NLBEndpoint:
     Type: AWS::EC2::VPCEndpoint
     Properties:
-      #PrivateDnsEnabled: true
       PrivateDnsEnabled: false
       SecurityGroupIds:
         - !Ref NLBEndpointSecurityGroup
-      #ServiceName: !Sub "com.amazonaws.${AWS::Region}.ssm"
       ServiceName: !Sub "com.amazonaws.vpce.${AWS::Region}.${VPCEndpointService}"
       SubnetIds:
         - !Ref PrivateSubnet
