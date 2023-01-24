@@ -94,15 +94,3 @@ Resources:
                   - !Sub "${BucketArn}/*"
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
-        
-        
-#Outputs:
-#  Instance1:
-#    Value: !Ref Instance1
-#    #Export:
-#    #  Name: !Sub ${Prefix}-Instance1
-#      
-#  Instance2:
-#    Value: !Ref Instance2
-#    #Export:
-#    #  Name: !Sub ${Prefix}-Instance2
