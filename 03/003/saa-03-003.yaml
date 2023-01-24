@@ -8,67 +8,19 @@ Parameters:
   Prefix:
     Type: String
     Default: saa-03-003
-    
-  #AvailabilityZone:
-  #  Type: String
-  #  Default: a
-  #  
-  #CidrIp:
-  #  Type: String
-  #  Default: 10.0.1.0/24
-    
-  #CidrIp2:
-  #  Type: String
-  #  Default: 10.0.2.0/24
-    
-  #HTTPPort:
-  #  Type: Number
-  #  Default: 80
-    
+
   HTTPSPort:
     Type: Number
     Default: 443
   
   ImageId:
-    #Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
     Type: String
     Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-arm64-gp2
-    
-  #InstanceSize:
-  #  Type: Number
-  #  Default: 2
-  #  #Default: 1
-    
-  #InstanceTagKey:
-  #  Type: String
-  #  Default: Server
-  #  
-  #  
-  #InstanceTagValueApp:
-  #  Type: String
-  #  Default: App
-  #  
-  #InstanceTagValueWeb1:
-  #  Type: String
-  #  Default: ApacheWeb
-  #  
-  #InstanceTagValueWeb2:
-  #  Type: String
-  #  Default: NginxWeb
-    
+
   InstanceType:
     Type: String
-    #Default: t4g.nano
     Default: t4g.nano
-  
-  #UWSGIPort:
-  #  Type: Number
-  #  Default: 9090
-    
-  #VPCCidrBlock:
-  #  Type: String
-  #  Default: 10.0.0.0/16
-  
+
 
 Resources:
   S3Stack:
@@ -90,7 +42,6 @@ Resources:
         CidrIp2: 10.0.2.0/24
         CidrIp3: 10.0.3.0/24
         CidrIp4: 10.0.4.0/24
-        #HTTPPort: !Ref HTTPPort
         HTTPSPort: !Ref HTTPSPort
         Prefix: !Ref Prefix
         VPCCidrBlock: 10.0.0.0/16
@@ -103,7 +54,6 @@ Resources:
       TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-endpoint.yaml"
       Parameters:
         EndpointSecurityGroup: !GetAtt VPCStack.Outputs.EndpointSecurityGroup
-        #Prefix: !Ref Prefix
         PrivateRouteTable2: !GetAtt VPCStack.Outputs.PrivateRouteTable2
         PrivateSubnet2: !GetAtt VPCStack.Outputs.PrivateSubnet2
         PrivateSubnet3: !GetAtt VPCStack.Outputs.PrivateSubnet3
@@ -124,4 +74,3 @@ Resources:
         PrivateSubnet1: !GetAtt VPCStack.Outputs.PrivateSubnet1
         PrivateSubnet2: !GetAtt VPCStack.Outputs.PrivateSubnet2
         PrivateSubnet3: !GetAtt VPCStack.Outputs.PrivateSubnet3
-        
