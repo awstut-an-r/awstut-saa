@@ -70,4 +70,3 @@ Resources:
       MasterUserPassword: !Ref DBMasterUserPassword
       VPCSecurityGroups:
         - !Ref DBSecurityGroup
-  
