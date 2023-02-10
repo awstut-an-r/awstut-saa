@@ -24,10 +24,7 @@ Parameters:
     
   DBMasterUserPassword:
     Type: String
-    
-  #DBSecurityGroup:
-  #  Type: String
-    
+
   DBSubnet1:
     Type: String
     
@@ -64,19 +61,10 @@ Resources:
     Type: AWS::RDS::DBInstance
     DeletionPolicy: Delete
     Properties:
-      #AllocatedStorage: !Ref DBAllocatedStorage
       AvailabilityZone: !Sub "${AWS::Region}${AvailabilityZone}"
-      #DBInstanceClass: !Ref DBInstanceClass
       DBInstanceIdentifier: !Sub "${Prefix}-dbinstance"
-      #DBName: !Ref DBName
       DBSubnetGroupName: !Ref DBSubnetGroup
-      #Engine: !Ref DBEngine
-      #EngineVersion: !Ref DBEngineVersion
-      #MasterUsername: !Ref DBMasterUsername
-      #MasterUserPassword: !Ref DBMasterUserPassword
       SourceDBInstanceIdentifier: !Sub "arn:aws:rds:${SourceDBInstanceRegion}:${AWS::AccountId}:db:${SourceDBInstanceIdentifier}"
-      #VPCSecurityGroups:
-      #  - !Ref DBSecurityGroup
   
 
 Outputs:
