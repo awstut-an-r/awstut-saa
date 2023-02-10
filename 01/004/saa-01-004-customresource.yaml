@@ -1,0 +1,105 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  DBInstance:
+    Type: String
+    
+  DBSecurityGroup:
+    Type: String
+    
+  Prefix:
+    Type: String
+    
+  Runtime:
+    Type: String
+    
+  Timeout:
+    Type: Number
+    
+    
+Resources:
+  CustomResource:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !GetAtt Function.Arn
+  
+  Function:
+    Type: AWS::Lambda::Function
+    Properties:
+      Environment:
+        Variables:
+          DB_INSTANCE: !Ref DBInstance
+          DB_SECURITY_GROUP: !Ref DBSecurityGroup
+          REGION: !Ref AWS::Region
+      Code:
+        #S3Bucket: !Ref CodeS3Bucket
+        #S3Key: !Ref CodeS3Key
+        ZipFile: |
+          import boto3
+          import cfnresponse
+          import os
+          
+          db_instance = os.environ['DB_INSTANCE']
+          db_security_group = os.environ['DB_SECURITY_GROUP']
+          region = os.environ['REGION']
+          
+          CREATE = 'Create'
+          response_data = {}
+          
+          def lambda_handler(event, context):
+            #client = boto3.client('rds', region_name=region)
+            #response = client.modify_db_instance(
+            #  DBInstanceIdentifier=db_instance,
+            #  VpcSecurityGroupIds=[
+            #    db_security_group
+            #  ]
+            #)
+          
+            try:
+              if event['RequestType'] == CREATE:
+                client = boto3.client('rds', region_name=region)
+                response = client.modify_db_instance(
+                  DBInstanceIdentifier=db_instance,
+                  VpcSecurityGroupIds=[
+                    db_security_group
+                  ]
+                )
+                print(response)
+                
+              cfnresponse.send(event, context, cfnresponse.SUCCESS, response_data)
+                
+            except Exception as e:
+              print(e)
+              cfnresponse.send(event, context, cfnresponse.FAILED, response_data)
+      FunctionName: !Sub "${Prefix}-function"
+      Handler: index.lambda_handler
+      Runtime: !Ref Runtime
+      Role: !GetAtt FunctionRole.Arn
+      Timeout: !Ref Timeout
+
+  FunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+      Policies:
+        - PolicyName: GetSSMParameterPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - rds:ModifyDBInstance
+                Resource:
+                  - !Sub "arn:aws:rds:${AWS::Region}:${AWS::AccountId}:pg:*"
+                  - !Sub "arn:aws:rds:${AWS::Region}:${AWS::AccountId}:secgrp:*"
+                  - !Sub "arn:aws:rds:${AWS::Region}:${AWS::AccountId}:og:*"
+                  - !Sub "arn:aws:rds:${AWS::Region}:${AWS::AccountId}:db:*"
