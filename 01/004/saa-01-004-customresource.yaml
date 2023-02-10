@@ -32,8 +32,6 @@ Resources:
           DB_SECURITY_GROUP: !Ref DBSecurityGroup
           REGION: !Ref AWS::Region
       Code:
-        #S3Bucket: !Ref CodeS3Bucket
-        #S3Key: !Ref CodeS3Key
         ZipFile: |
           import boto3
           import cfnresponse
@@ -47,14 +45,6 @@ Resources:
           response_data = {}
           
           def lambda_handler(event, context):
-            #client = boto3.client('rds', region_name=region)
-            #response = client.modify_db_instance(
-            #  DBInstanceIdentifier=db_instance,
-            #  VpcSecurityGroupIds=[
-            #    db_security_group
-            #  ]
-            #)
-          
             try:
               if event['RequestType'] == CREATE:
                 client = boto3.client('rds', region_name=region)
