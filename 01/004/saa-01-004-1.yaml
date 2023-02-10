@@ -3,20 +3,12 @@ AWSTemplateFormatVersion: 2010-09-09
 Parameters:
   TemplateBucketName:
     Type: String
-    Default: awstut-bucket
-    
-  #TemplateBucketFolder:
-  #  Type: String
-  #  Default: saa-01-004
-    
+    Default: [bucket-name]
+
   Prefix:
     Type: String
     Default: saa-01-004
-    
-  #PrefixCommon:
-  #  Type: String
-  #  Default: saa-01-004
-    
+
   AvailabilityZone1:
     Type: String
     Default: a
@@ -64,12 +56,10 @@ Parameters:
   ImageId:
     Type: String
     Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-arm64-gp2
-    #Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
     
   InstanceType:
     Type: String
     Default: t4g.nano
-    #Default: t3a.nano
     
   MySQLPort:
     Type: Number
@@ -102,13 +92,7 @@ Resources:
       Parameters:
         EndpointSecurityGroup: !GetAtt VPCStack.Outputs.EndpointSecurityGroup
         InstanceSubnet: !GetAtt VPCStack.Outputs.InstanceSubnet
-        #Prefix: !Ref Prefix
-        #PrivateRouteTable1: !GetAtt VPCStack.Outputs.PrivateRouteTable1
         RouteTable: !GetAtt VPCStack.Outputs.RouteTable
-        #PrivateSubnet1: !GetAtt VPCStack2.Outputs.PrivateSubnet1
-        #PrivateSubnet2: !GetAtt VPCStack2.Outputs.PrivateSubnet2
-        #PrivateSubnet: !GetAtt VPCStack2.Outputs.PrivateSubnet1
-        #PrivateSubnet2: !GetAtt VPCStack.Outputs.PrivateSubnet2
         VPC: !GetAtt VPCStack.Outputs.VPC
         
   EC2Stack:
@@ -119,15 +103,10 @@ Resources:
     Properties:
       TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-ec2.yaml"
       Parameters:
-        #BucketArn: !GetAtt S3Stack.Outputs.BucketArn
         ImageId: !Ref ImageId
         InstanceSecurityGroup: !GetAtt VPCStack.Outputs.InstanceSecurityGroup
         InstanceSubnet: !GetAtt VPCStack.Outputs.InstanceSubnet
         InstanceType: !Ref InstanceType
-        #Prefix: !Ref Prefix
-        #PrivateSubnet1: !GetAtt VPCStack.Outputs.PrivateSubnet1
-        #PrivateSubnet2: !GetAtt VPCStack.Outputs.PrivateSubnet2
-        #PrivateSubnet: !GetAtt VPCStack.Outputs.PrivateSubnet
         
   RDSStack:
     Type: AWS::CloudFormation::Stack
@@ -141,21 +120,12 @@ Resources:
         DBEngine: !Ref DBEngine
         DBEngineVersion: !Ref DBEngineVersion
         DBInstanceClass: !Ref DBInstanceClass
-        #DBInstanceIdentifier: !Sub "${Prefix}-dbinstance3"
         DBName: !Ref DBName
         DBMasterUsername: !Ref DBMasterUsername
         DBMasterUserPassword: !Ref DBMasterUserPassword
         DBSecurityGroup: !GetAtt VPCStack.Outputs.DBSecurityGroup
         DBSubnet1: !GetAtt VPCStack.Outputs.DBSubnet1
         DBSubnet2: !GetAtt VPCStack.Outputs.DBSubnet2
-        #DBSubnetGroup: !GetAtt RDSCommonStack.Outputs.DBSubnetGroup
-        #ImageId: !Ref ImageId
-        #InstanceProfile: !GetAtt RDSCommonStack.Outputs.InstanceProfile
-        #InstanceSecurityGroup: !GetAtt VPCStack2.Outputs.InstanceSecurityGroup
-        #InstanceType: !Ref InstanceType
-        #LicenseModel: general-public-license
         Port: !Ref MySQLPort
         Prefix: !Sub "${Prefix}-1"
-        #PrivateSubnet: !GetAtt VPCStack2.Outputs.PrivateSubnet1
-        #PrivateSubnet2: !GetAtt VPCStack2.Outputs.PrivateSubnet2
         VPC: !GetAtt VPCStack.Outputs.VPC
