@@ -81,7 +81,7 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
       Policies:
-        - PolicyName: GetSSMParameterPolicy
+        - PolicyName: ModifyDBInstancePolicy
           PolicyDocument:
             Version: 2012-10-17
             Statement:
