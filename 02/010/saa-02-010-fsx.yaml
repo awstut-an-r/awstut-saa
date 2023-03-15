@@ -1,0 +1,93 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Parameters:
+  Bucket:
+    Type: String
+    
+  FSxSecurityGroup:
+    Type: String
+    
+  FSxStorageCapacity:
+    Type: Number
+    
+  FSxSubnet:
+    Type: String
+
+  Prefix:
+    Type: String
+
+
+Resources:
+  FSxLustre:
+    Type: AWS::FSx::FileSystem
+    Properties: 
+      #BackupId: String
+      FileSystemType: LUSTRE
+      FileSystemTypeVersion: 2.12
+      #KmsKeyId: String
+      LustreConfiguration: 
+        AutoImportPolicy: NONE
+        #AutomaticBackupRetentionDays: 0 # Setting this property to 0 disables automatic backups.The default is 0.
+        #CopyTagsToBackups: Boolean
+        #DailyAutomaticBackupStartTime: String
+        DataCompressionType: NONE
+        DeploymentType: SCRATCH_1
+        #DriveCacheType: String
+        #ExportPath: String
+        #ImportedFileChunkSize: Integer
+        ImportPath: !Sub "s3://${Bucket}/"
+        #PerUnitStorageThroughput: Integer
+        #WeeklyMaintenanceStartTime: String
+      #OntapConfiguration: 
+      #  OntapConfiguration
+      #OpenZFSConfiguration: 
+      #  OpenZFSConfiguration
+      SecurityGroupIds: 
+        - !Ref FSxSecurityGroup
+      StorageCapacity: !Ref FSxStorageCapacity
+      StorageType: SSD
+      SubnetIds: 
+        - !Ref FSxSubnet
+      #Tags: 
+      #  - Tag
+      #WindowsConfiguration: 
+      #  WindowsConfiguration
+
+  #FSxLustre:
+  #  Type: AWS::FSx::FileSystem
+  #  Properties:
+  #    FileSystemType: LUSTRE
+  #    LustreConfiguration:
+  #      AutoImportPolicy: NONE
+  #      #AutomaticBackupRetentionDays: Integer
+  #      #CopyTagsToBackups: Boolean
+  #      #DailyAutomaticBackupStartTime: String
+  #      DeploymentType: SCRATCH_1
+  #      #DriveCacheType: String
+  #      #ExportPath: String
+  #      #ImportedFileChunkSize: Integer
+  #      ImportPath: !Sub
+  #        - s3://${BucketName}/
+  #        - BucketName:
+  #            Fn::ImportValue: !Sub ${Prefix}-FSxLustreBucket
+  #      #PerUnitStorageThroughput: Integer
+  #      #WeeklyMaintenanceStartTime: String
+  #    SecurityGroupIds:
+  #      - !GetAtt FSxLustreSecurityGroup.GroupId
+  #    StorageCapacity: 1200
+  #    StorageType: SSD
+  #    SubnetIds:
+  #      - Fn::ImportValue: !Sub ${Prefix}-PublicSubnet
+        
+  #FSxLustreSecurityGroup:
+  #  Type: AWS::EC2::SecurityGroup
+  #  Properties:
+  #    GroupName: fsx-lustre-sg
+  #    GroupDescription: Allow TCP.
+  #    VpcId:
+  #      Fn::ImportValue: !Sub ${Prefix}-VPC
+  #    SecurityGroupIngress:
+  #      - IpProtocol: tcp
+  #        FromPort: 0 
+  #        ToPort: 65535 
+  #        CidrIp: 0.0.0.0/0

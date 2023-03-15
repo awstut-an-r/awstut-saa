@@ -1,0 +1,97 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  TemplateBucketName:
+    Type: String
+    Default: awstut-bucket
+    
+  Prefix:
+    Type: String
+    Default: saa-02-010
+    
+  AvailabilityZone1:
+    Type: String
+    Default: a
+    
+  FSxStorageCapacity:
+    Type: Number
+    Default: 1200
+    
+  ImageId:
+    Type: String
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-arm64-gp2
+    
+  InstanceType:
+    Type: String
+    Default: t4g.nano
+
+  HTTPSPort:
+    Type: Number
+    Default: 443
+    
+    
+Resources:
+  S3Stack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-s3.yaml"
+      Parameters:
+        Prefix: !Ref Prefix
+        
+  VPCStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-vpc.yaml"
+      Parameters:
+        AvailabilityZone1: !Ref AvailabilityZone1
+        CidrIp1: 10.0.1.0/24
+        CidrIp2: 10.0.2.0/24
+        HTTPSPort: !Ref HTTPSPort
+        Prefix: !Ref Prefix
+        VPCCidrBlock: 10.0.0.0/16
+        
+  EndpointStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn:
+      - VPCStack
+    Properties:
+      TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-endpoint.yaml"
+      Parameters:
+        EndpointSecurityGroup: !GetAtt VPCStack.Outputs.EndpointSecurityGroup
+        FSxSubnetRouteTable: !GetAtt VPCStack.Outputs.FSxSubnetRouteTable
+        InstanceSubnet: !GetAtt VPCStack.Outputs.InstanceSubnet
+        InstanceSubnetRouteTable: !GetAtt VPCStack.Outputs.InstanceSubnetRouteTable
+        #Prefix: !Ref Prefix
+        VPC: !GetAtt VPCStack.Outputs.VPC
+        
+  EC2Stack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn:
+      #- VPCStack
+      - EndpointStack
+    Properties:
+      TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-ec2.yaml"
+      Parameters:
+        #BucketArn: !GetAtt S3Stack.Outputs.BucketArn
+        ImageId: !Ref ImageId
+        InstanceSecurityGroup: !GetAtt VPCStack.Outputs.InstanceSecurityGroup
+        InstanceSubnet: !GetAtt VPCStack.Outputs.InstanceSubnet
+        InstanceType: !Ref InstanceType
+        #Prefix: !Ref Prefix
+        #PrivateSubnet1: !GetAtt VPCStack.Outputs.PrivateSubnet1
+        #PrivateSubnet2: !GetAtt VPCStack.Outputs.PrivateSubnet2
+        #PrivateSubnet: !GetAtt VPCStack1.Outputs.PrivateSubnet
+        
+  FSxStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn:
+      #- VPCStack
+      - EndpointStack
+    Properties:
+      TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-fsx.yaml"
+      Parameters:
+        Bucket: !GetAtt S3Stack.Outputs.Bucket
+        FSxSecurityGroup: !GetAtt VPCStack.Outputs.FSxSecurityGroup
+        FSxStorageCapacity: !Ref FSxStorageCapacity
+        FSxSubnet: !GetAtt VPCStack.Outputs.FSxSubnet
+        Prefix: !Ref Prefix
