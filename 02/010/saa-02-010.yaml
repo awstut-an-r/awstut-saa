@@ -61,31 +61,23 @@ Resources:
         FSxSubnetRouteTable: !GetAtt VPCStack.Outputs.FSxSubnetRouteTable
         InstanceSubnet: !GetAtt VPCStack.Outputs.InstanceSubnet
         InstanceSubnetRouteTable: !GetAtt VPCStack.Outputs.InstanceSubnetRouteTable
-        #Prefix: !Ref Prefix
         VPC: !GetAtt VPCStack.Outputs.VPC
         
   EC2Stack:
     Type: AWS::CloudFormation::Stack
     DependsOn:
-      #- VPCStack
       - EndpointStack
     Properties:
       TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-ec2.yaml"
       Parameters:
-        #BucketArn: !GetAtt S3Stack.Outputs.BucketArn
         ImageId: !Ref ImageId
         InstanceSecurityGroup: !GetAtt VPCStack.Outputs.InstanceSecurityGroup
         InstanceSubnet: !GetAtt VPCStack.Outputs.InstanceSubnet
         InstanceType: !Ref InstanceType
-        #Prefix: !Ref Prefix
-        #PrivateSubnet1: !GetAtt VPCStack.Outputs.PrivateSubnet1
-        #PrivateSubnet2: !GetAtt VPCStack.Outputs.PrivateSubnet2
-        #PrivateSubnet: !GetAtt VPCStack1.Outputs.PrivateSubnet
         
   FSxStack:
     Type: AWS::CloudFormation::Stack
     DependsOn:
-      #- VPCStack
       - EndpointStack
     Properties:
       TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-fsx.yaml"
