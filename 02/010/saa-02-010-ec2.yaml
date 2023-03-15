@@ -12,10 +12,6 @@ Parameters:
     
   InstanceType:
     Type: String
-
-  #Prefix:
-  #  Type: String
-  #  Default: saa-03-02
     
     
 Resources:
@@ -30,9 +26,6 @@ Resources:
           SubnetId: !Ref InstanceSubnet
           GroupSet:
             - !Ref InstanceSecurityGroup
-      #UserData: !Base64 |
-      #  #!/bin/bash -xe
-      #  amazon-linux-extras install -y lustre
       
   InstanceProfile:
     Type: AWS::IAM::InstanceProfile
@@ -52,16 +45,5 @@ Resources:
             Principal:
               Service:
                 - ec2.amazonaws.com
-      #Policies:
-      #  - PolicyName: AccessS3Policy
-      #    PolicyDocument:
-      #      Version: 2012-10-17
-      #      Statement:
-      #        - Effect: Allow
-      #          Action:
-      #            - s3:*
-      #          Resource:
-      #            - !Ref BucketArn
-      #            - !Sub "${BucketArn}/*"
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
