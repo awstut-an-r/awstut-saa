@@ -16,6 +16,3 @@ Resources:
 Outputs:
   Bucket:
     Value: !Ref Bucket
-  
-  #BucketArn:
-  #  Value: !GetAtt Bucket.Arn
