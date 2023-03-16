@@ -24,8 +24,6 @@ Resources:
       FileSystemType: LUSTRE
       FileSystemTypeVersion: 2.12
       LustreConfiguration: 
-        AutoImportPolicy: NONE
-        DataCompressionType: NONE
         DeploymentType: SCRATCH_1
         ImportPath: !Sub "s3://${Bucket}/"
       SecurityGroupIds: 
