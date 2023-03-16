@@ -76,7 +76,7 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupName: !Sub "${Prefix}-FSxSecurityGroup"
-      GroupDescription: Allow all from Instance.
+      GroupDescription: FSx for Lustre SecurityGroup.
       VpcId: !Ref VPC
       SecurityGroupIngress:
         - IpProtocol: tcp
