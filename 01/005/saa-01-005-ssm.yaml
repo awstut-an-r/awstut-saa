@@ -1,0 +1,183 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  #BucketName:
+  #  Type: String
+  
+  #CreateImageRoleArn:
+  #  Type: String
+    
+  #Instance:
+  #  Type: String
+  
+  DestinationRegion:
+    Type: String
+    
+  Prefix:
+    Type: String
+    
+  SourceRegion:
+    Type: String
+    
+  TagKey:
+    Type: String
+    
+  TagValue:
+    Type: String
+    
+  WaitForSuccessTimeoutSeconds:
+    Type: Number
+    
+
+Resources:
+  CreateAndCopyImageRunbook:
+    Type: AWS::SSM::Document
+    Properties: 
+      #Attachments: 
+      #  - AttachmentsSource
+      Content:
+        assumeRole: "{{AutomationAssumeRole}}"
+        #description: Run a script on Linux instances.
+        description: Create and Copy AMI to another region.
+        schemaVersion: "0.3"
+        parameters:
+          AutomationAssumeRole:
+            type: String
+            description: (Optional) The ARN of the role that allows Automation to perform the actions on your behalf.
+            default: ""
+          #Commands:
+          #  type: String
+          #  description: (Required) The commands to run or the path to an existing script on the instance.
+          #  default: echo Hello World
+          DestinationRegion:
+            type: String
+            description: (Required) The Region to copy image to.
+          InstanceId:
+            type: String
+            description: (Required) The instance ID you want to run commands on.
+            default: ""
+        mainSteps:
+          - name: createImage
+            action: aws:createImage
+            maxAttempts: 1
+            onFailure: Abort
+            inputs:
+              InstanceId: "{{InstanceId}}"
+              ImageName: "{{InstanceId}}_{{global:DATE_TIME}}"
+              NoReboot: true
+          - name: copyImage
+            action: aws:executeScript
+            inputs:
+              Runtime: python3.8
+              Handler: handler
+              InputPayload:
+                DestinationRegion: "{{DestinationRegion}}"
+                InstanceId: "{{InstanceId}}"
+                SourceImageId: "{{createImage.ImageId}}"
+                SourceRegion: "{{global:REGION}}"
+                #StringList:
+                #  - "{{createImage.Output}}"
+              Script: |-
+                import boto3
+                import datetime
+                
+                def handler(events, context):
+                  destination_region = events['DestinationRegion']
+                  instance_id = events['InstanceId']
+                  source_image_id = events['SourceImageId']
+                  source_region = events['SourceRegion']
+                  
+                  now = datetime.datetime.now()
+                  d = now.strftime('%Y-%m-%d_%H.%M.%S')
+                  
+                  client = boto3.client('ec2', region_name=destination_region)
+                  response = client.copy_image(
+                    #ClientToken='string',
+                    Description='test copy',
+                    #Encrypted=True,
+                    #KmsKeyId='string',
+                    Name='{instance_id}_{datetime}'.format(instance_id=instance_id, datetime=d),
+                    SourceImageId=source_image_id,
+                    SourceRegion=source_region,
+                    #DestinationOutpostArn='string',
+                    #DryRun=True|False,
+                    #CopyImageTags=True|False
+                  )
+                  
+                  return response
+      DocumentFormat: YAML
+      DocumentType: Automation
+      Name: !Sub "${Prefix}-CreateAndCopyImageRunbook"
+      #Requires: 
+      #  - DocumentRequires
+      #Tags: 
+      #  - Tag
+      TargetType: /AWS::EC2::Instance
+      #UpdateMethod: String
+      #VersionName: String
+
+  CreateAndCopyImageAssociation:
+    Type: AWS::SSM::Association
+    Properties:
+      AssociationName: !Sub "${Prefix}-CreateAndCopyImageAssociation"
+      AutomationTargetParameterName: InstanceId
+      #Name: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:document/${CreateAndShareAMIRunbook}"
+      Name: !Ref CreateAndCopyImageRunbook
+      #OutputLocation:
+      #  S3Location:
+      #    OutputS3BucketName: !Ref BucketName
+      #    OutputS3KeyPrefix: MyRunbookAssociation/
+      Parameters:
+        #AccountId:
+        #  - !Ref AccountId
+        AutomationAssumeRole:
+          - !GetAtt CreateAndCopyImageRunbookRole.Arn
+          #- !Ref CreateImageRoleArn
+        #Commands:
+        #  - "echo Hello World"
+        DestinationRegion:
+          - !Ref DestinationRegion
+        InstanceId:
+          - "{{RESOURCE_ID}}"
+          #- !Ref Instance
+        #NoReboot:
+        #  - "false"
+      Targets:
+        #- Key: InstanceIds
+        #  Values:
+        #    - !Ref Instance1
+        - Key: !Sub "tag:${TagKey}"
+          Values:
+            #- !Ref Instance1
+            - !Ref TagValue
+      WaitForSuccessTimeoutSeconds: !Ref WaitForSuccessTimeoutSeconds
+      
+  CreateAndCopyImageRunbookRole:
+    Type: AWS::IAM::Role
+    DeletionPolicy: Delete
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Principal:
+              Service:
+                - ssm.amazonaws.com
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonSSMAutomationRole
+      Policies:
+        - PolicyName: CreateAndCopyImagePolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  #- "*"
+                  #- ec2:CreateImage
+                  #- ec2:CopyImage
+                  #- ec2:DescribeInstances
+                  #- ec2:ModifyImageAttribute
+                  - iam:PassRole
+                Resource:
+                  - "*"
