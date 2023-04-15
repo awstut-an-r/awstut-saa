@@ -6,10 +6,7 @@ Parameters:
     
   AvailabilityZone2:
     Type: String
-    
-  #AvailabilityZone3:
-  #  Type: String
-    
+
   CidrIp1:
     Type: String
     
@@ -18,10 +15,7 @@ Parameters:
     
   CidrIp3:
     Type: String
-    
-  #CidrIp4:
-  #  Type: String
-    
+
   HTTPSPort:
     Type: Number
     
@@ -81,14 +75,7 @@ Resources:
       CidrBlock: !Ref CidrIp3
       VpcId: !Ref VPC
       AvailabilityZone: !Sub "${AWS::Region}${AvailabilityZone2}"
-      
-  #PrivateSubnet3:
-  #  Type: AWS::EC2::Subnet
-  #  Properties:
-  #    CidrBlock: !Ref CidrIp4
-  #    VpcId: !Ref VPC
-  #    AvailabilityZone: !Sub "${AWS::Region}${AvailabilityZone3}"
-      
+
   
   PublicRouteTable:
     Type: AWS::EC2::RouteTable
