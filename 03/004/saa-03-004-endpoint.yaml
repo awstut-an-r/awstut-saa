@@ -4,18 +4,12 @@ Parameters:
   EndpointSecurityGroup:
     Type: String
 
-  #Prefix:
-  #  Type: String
-    
   PrivateRouteTable2:
     Type: String
     
   PrivateSubnet2:
     Type: String
-    
-  #PrivateSubnet3:
-  #  Type: String
-    
+
   VPC:
     Type: String
     
@@ -24,41 +18,12 @@ Resources:
   GatewayDynamoDBEndpoint:
     Type: AWS::EC2::VPCEndpoint
     Properties:
-      #PolicyDocument:
-      #  Version: 2012-10-17
-      #  Statement:
-      #    - Effect: Allow
-      #      Principal: '*'
-      #      Action:
-      #        - s3:GetObject
-      #      Resource:
-      #        - !Sub arn:aws:s3:::amazonlinux.${AWS::Region}.amazonaws.com/*
-      #        - !Sub arn:aws:s3:::amazonlinux-2-repos-${AWS::Region}/*
-      #    #- Effect: Allow
-      #    #  Principal: '*'
-      #    #  Action:
-      #    #    - s3:*
-      #    #  Resource:
-      #    #    - !Ref PlaybookBucketArn
-      #    #    - !Sub "${PlaybookBucketArn}/*"
       RouteTableIds:
         - !Ref PrivateRouteTable2
       ServiceName: !Sub "com.amazonaws.${AWS::Region}.dynamodb"
       VpcEndpointType: Gateway
       VpcId: !Ref VPC
-      
-  #InterfaceDynamoDBEndpoint:
-  #  Type: AWS::EC2::VPCEndpoint
-  #  Properties:
-  #    PrivateDnsEnabled: false
-  #    SecurityGroupIds:
-  #      - !Ref EndpointSecurityGroup
-  #    ServiceName: !Sub "com.amazonaws.${AWS::Region}.dynamodb"
-  #    SubnetIds:
-  #      - !Ref PrivateSubnet3
-  #    VpcEndpointType: Interface
-  #    VpcId: !Ref VPC
-        
+
   SSMEndpoint:
     Type: AWS::EC2::VPCEndpoint
     Properties:
@@ -68,7 +33,6 @@ Resources:
       ServiceName: !Sub "com.amazonaws.${AWS::Region}.ssm"
       SubnetIds:
         - !Ref PrivateSubnet2
-        #- !Ref PrivateSubnet3
       VpcEndpointType: Interface
       VpcId: !Ref VPC
 
@@ -81,7 +45,6 @@ Resources:
       ServiceName: !Sub "com.amazonaws.${AWS::Region}.ec2messages"
       SubnetIds:
         - !Ref PrivateSubnet2
-        #- !Ref PrivateSubnet3
       VpcEndpointType: Interface
       VpcId: !Ref VPC
         
@@ -94,6 +57,5 @@ Resources:
       ServiceName: !Sub "com.amazonaws.${AWS::Region}.ssmmessages"
       SubnetIds:
         - !Ref PrivateSubnet2
-        #- !Ref PrivateSubnet3
       VpcEndpointType: Interface
       VpcId: !Ref VPC
