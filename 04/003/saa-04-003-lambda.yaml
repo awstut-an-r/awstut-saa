@@ -30,7 +30,6 @@ Resources:
       Architectures:
         - !Ref Architecture
       Code:
-        # https://docs.aws.amazon.com/ja_jp/streams/latest/dev/get-started-exercise.html
         ZipFile: |
           import boto3
           import datetime
@@ -67,7 +66,6 @@ Resources:
       Environment:
         Variables:
           KINESIS_STREAM_NAME: !Ref KinesisDataStreamName
-          #  Fn::ImportValue: !Sub ${Prefix}-DataStream
       Handler: !Ref Handler
       Role: !GetAtt DataSourceLambdaRole.Arn
       Runtime: !Ref Runtime
@@ -85,10 +83,7 @@ Resources:
               Service:
                 - lambda.amazonaws.com
       ManagedPolicyArns:
-        #- arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-        #- arn:aws:iam::aws:policy/AmazonKinesisFullAccess
         - arn:aws:iam::aws:policy/service-role/AWSLambdaKinesisExecutionRole
-        #- arn:aws:iam::aws:policy/service-role/AWSLambdaKinesisExecutionRole
       Policies:
         - PolicyName: DataSourceLambdaPolicy
           PolicyDocument:
@@ -99,4 +94,3 @@ Resources:
                   - kinesis:PutRecord
                 Resource:
                   - !Ref KinesisDataStreamArn
-      
