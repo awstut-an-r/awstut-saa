@@ -76,8 +76,6 @@ Resources:
             Principal:
               Service:
                 - lambda.amazonaws.com
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaKinesisExecutionRole
       Policies:
         - PolicyName: DataSourceLambdaPolicy
           PolicyDocument:
