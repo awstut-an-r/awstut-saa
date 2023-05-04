@@ -1,0 +1,69 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  TemplateBucketName:
+    Type: String
+    Default: awstut-bucket
+    
+  Prefix:
+    Type: String
+    Default: saa-04-003
+    
+  #KinesisNamePrefix:
+  #  Type: String
+  #  Default: SAMPLE_APP
+    
+  KinesisShardCount:
+    Type: Number
+    Default: 1
+    
+  LambdaArchitecture:
+    Type: String
+    Default: arm64
+    
+  LambdaHandler:
+    Type: String
+    Default: index.lambda_handler
+    
+  LambdaRuntime:
+    Type: String
+    Default: python3.8
+    
+  LambdaTimeout:
+    Type: Number
+    Default: 60
+
+
+Resources:
+  S3Stack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-s3.yaml"
+      Parameters:
+        Prefix: !Ref Prefix
+        
+  KinesisStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-kinesis.yaml"
+      Parameters:
+        BucketArn: !GetAtt S3Stack.Outputs.BucketArn
+        #BucketName: !GetAtt S3Stack.Outputs.BucketName
+        KinesisFirehoseDeliveryStreamName: !Sub "${Prefix}-FirehoseDeliveryStream"
+        Prefix: !Ref Prefix
+        #NamePrefix: !Ref KinesisNamePrefix
+        ShardCount: !Ref KinesisShardCount
+  
+
+  LambdaStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-lambda.yaml"
+      Parameters:
+        Architecture: !Ref LambdaArchitecture
+        Handler: !Ref LambdaHandler
+        KinesisDataStreamArn: !GetAtt KinesisStack.Outputs.KinesisDataStreamArn
+        KinesisDataStreamName: !GetAtt KinesisStack.Outputs.KinesisDataStreamName
+        Prefix: !Ref Prefix
+        Runtime: !Ref LambdaRuntime
+        Timeout: !Ref LambdaTimeout
