@@ -38,7 +38,7 @@ Resources:
           import random
           
           STREAM_NAME = os.environ['KINESIS_STREAM_NAME']
-          LIMIT = 100
+          LIMIT = 10
           
           def get_data():
             return {
