@@ -11,17 +11,8 @@ Resources:
     Properties:
       AccessControl: Private
       BucketName: !Ref Prefix
-      #BucketEncryption:
-      #  ServerSideEncryptionConfiguration:
-      #    - BucketKeyEnabled: false
-      #      ServerSideEncryptionByDefault: 
-      #        #KMSMasterKeyID: String
-      #        SSEAlgorithm: AES256
 
 
 Outputs:
-  #BucketName:
-  #  Value: !Ref Bucket
-  
   BucketArn:
     Value: !GetAtt Bucket.Arn
