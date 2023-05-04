@@ -38,31 +38,25 @@ Resources:
           import random
           
           STREAM_NAME = os.environ['KINESIS_STREAM_NAME']
-          PRODUCT_IDS = ['00001', '00002']
-          LIMIT = 5
+          LIMIT = 100
           
-          kinesis = boto3.client('kinesis')
-          
-          
-          def get_data(product_id):
+          def get_data():
             return {
               'EVENT_TIME': datetime.datetime.now().isoformat(),
-              'PRODUCT_ID': product_id,
-              'TEMPERATURE': 20 + round(random.random(), 2)}
-              
+              'TICKER': random.choice(['AAPL', 'AMZN', 'MSFT', 'INTC', 'TBV']),
+              'PRICE': round(random.random() * 100, 2)}
+          
           def generate(stream_name, kinesis_client, limit):
             for i in range(limit):
-              for product_id in PRODUCT_IDS:
-                data = get_data(product_id)
-                #print(data)
-                kinesis_client.put_record(
-                  StreamName=stream_name,
-                  Data=json.dumps(data).encode('utf-8'),
-                  PartitionKey=product_id)
-
+              data = get_data()
+              print(data)
+              kinesis_client.put_record(
+                StreamName=stream_name,
+                Data=json.dumps(data).encode('utf-8'),
+                PartitionKey="partitionkey")
+        
           def lambda_handler(event, context):
-            #print(STREAM_NAME)
-            generate(STREAM_NAME, kinesis, LIMIT)
+            generate(STREAM_NAME, boto3.client('kinesis'), LIMIT)
       Environment:
         Variables:
           KINESIS_STREAM_NAME: !Ref KinesisDataStreamName
