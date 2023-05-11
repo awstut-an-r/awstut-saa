@@ -5,10 +5,7 @@ Parameters:
   
   ALBDNSName:
     Type: String
-    
-  #InstancePublicDnsName:
-  #  Type: String
-    
+
   Prefix:
     Type: String
     
