@@ -28,17 +28,7 @@ Parameters:
   InstanceType:
     Type: String
     Default: t4g.nano
-    
-  #InstanceUserData:
-  #  Type: String
-  #  Default: |
-  #    #!/bin/bash -xe
-  #    yum update -y
-  #    yum install -y httpd
-  #    systemctl start httpd
-  #    systemctl enable httpd
-  #    ec2-metadata -i > /var/www/html/index.html
-      
+
     
 Resources:
   VPCStack:
@@ -92,8 +82,6 @@ Resources:
           systemctl start httpd
           systemctl enable httpd
           ec2-metadata -i > /var/www/html/index.html
-        #UserData: !Base64
-        #  Fn::Ref InstanceUserData
           
   ALBStack:
     Type: AWS::CloudFormation::Stack
@@ -121,12 +109,10 @@ Resources:
   CloudFrontStack:
     Type: AWS::CloudFormation::Stack
     DependsOn:
-      #- EC2Stack
       - ALBStack
     Properties:
       TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-cloudfront.yaml"
       Parameters:
         CacheTTL: !Ref CloudFrontCacheTTL
         ALBDNSName: !GetAtt ALBStack.Outputs.ALBDNSName
-        #InstancePublicDnsName: !GetAtt EC2Stack.Outputs.InstancePublicDnsName
         Prefix: !Ref Prefix
