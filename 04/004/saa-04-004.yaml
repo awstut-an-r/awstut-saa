@@ -20,47 +20,10 @@ Parameters:
   AvailabilityZone3:
     Type: String
     Default: d
-    
-  #DBEngine:
-  #  Type: String
-  #  Default: aurora-mysql
-  #  
-  #DBEngineVersion:
-  #  Type: String
-  #  Default: 8.0.mysql_aurora.3.03.1
-  #  
-  #DBInstanceClass:
-  #  Type: String
-  #  Default: db.serverless
-  #  
-  #DBName:
-  #  Type: String
-  #  Default: testdb
-  #  
-  #DBMasterUsername:
-  #  Type: String
-  #  Default: testuser
-  #  
-  #DBMasterUserPassword:
-  #  Type: String
-  #  Default: Passw0rd
-    
-  #HTTPSPort:
-  #  Type: Number
-  #  Default: 443
-    
+
   InstanceImageId:
     Type: String
-    #Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-arm64-gp2
     Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-6.1-arm64
-    
-  #InstanceTagKey:
-  #  Type: String
-  #  Default: schedule
-  #  
-  #InstanceTagValue:
-  #  Type: String
-  #  Default: true
     
   InstanceType:
     Type: String
@@ -81,11 +44,7 @@ Parameters:
   LambdaTimeout:
     Type: Number
     Default: 10
-    
-  #MySQLPort:
-  #  Type: Number
-  #  Default: 3306
-    
+
     
 Resources:
   VPCStack:
@@ -99,8 +58,6 @@ Resources:
         CidrIp1: 10.0.1.0/24
         CidrIp2: 10.0.2.0/24
         CidrIp3: 10.0.3.0/24
-        #HTTPSPort: !Ref HTTPSPort
-        #MySQLPort: !Ref MySQLPort
         Prefix: !Ref Prefix
         VPCCidrBlock: 10.0.0.0/16
         
@@ -116,8 +73,6 @@ Resources:
         InstanceSubnet1: !GetAtt VPCStack.Outputs.PrivateSubnet1
         InstanceSubnet2: !GetAtt VPCStack.Outputs.PrivateSubnet2
         InstanceSubnet3: !GetAtt VPCStack.Outputs.PrivateSubnet3
-        #InstanceTagKey: !Ref InstanceTagKey
-        #InstanceTagValue: !Ref InstanceTagValue
         InstanceType: !Ref InstanceType
         
   LambdaStack:
@@ -128,19 +83,11 @@ Resources:
       TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-lambda.yaml"
       Parameters:
         Architecture: !Ref LambdaArchitecture
-        #CodeS3Bucket: !GetAtt S3Bucket.Outputs.Bucket
-        #CodeS3Bucket: !Ref TemplateBucketName
-        #CodeS3Key: !Sub "${Prefix}/${LambdaPackage}"
-        #EphemeralStorageSize: !Ref EphemeralStorageSize
-        #FunctionSecurityGroup: !GetAtt VPCStack.Outputs.FunctionSecurityGroup
         Handler: !Ref LambdaHandler
         Instance: !GetAtt EC2Stack.Outputs.Instance1
-        #LayerPackage: !Ref LayerPackage
-        #LayerS3Key: !Sub "${Prefix}/${LayerPackage}"
         Prefix: !Ref Prefix
         Runtime: !Ref LambdaRuntime
         Timeout: !Ref LambdaTimeout
-        #UrlsParameter: !GetAtt SSMStack.Outputs.UrlsParameter
         
   SSMStack:
     Type: AWS::CloudFormation::Stack
@@ -160,6 +107,4 @@ Resources:
       TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-eventbridge.yaml"
       Parameters:
         Instance: !GetAtt EC2Stack.Outputs.Instance3
-        #InstanceTagKey: !Ref InstanceTagKey
-        #InstanceTagValue: !Ref InstanceTagValue
         Prefix: !Ref Prefix
