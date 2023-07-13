@@ -15,12 +15,6 @@ Parameters:
     
   InstanceSubnet3:
     Type: String
-    
-  #InstanceTagKey:
-  #  Type: String
-  #  
-  #InstanceTagValue:
-  #  Type: String
 
   InstanceType:
     Type: String
@@ -30,7 +24,6 @@ Resources:
   Instance1:
     Type: AWS::EC2::Instance
     Properties:
-      #IamInstanceProfile: !Ref InstanceProfile
       ImageId: !Ref ImageId
       InstanceType: !Ref InstanceType
       NetworkInterfaces:
@@ -38,15 +31,10 @@ Resources:
           SubnetId: !Ref InstanceSubnet1
           GroupSet:
             - !Ref InstanceSecurityGroup
-      #UserData: !Base64 |
-      #  #!/bin/bash -xe
-      #  dnf update -y
-      #  dnf install -y mariadb105
       
   Instance2:
     Type: AWS::EC2::Instance
     Properties:
-      #IamInstanceProfile: !Ref InstanceProfile
       ImageId: !Ref ImageId
       InstanceType: !Ref InstanceType
       NetworkInterfaces:
@@ -58,7 +46,6 @@ Resources:
   Instance3:
     Type: AWS::EC2::Instance
     Properties:
-      #IamInstanceProfile: !Ref InstanceProfile
       ImageId: !Ref ImageId
       InstanceType: !Ref InstanceType
       NetworkInterfaces:
@@ -66,31 +53,7 @@ Resources:
           SubnetId: !Ref InstanceSubnet3
           GroupSet:
             - !Ref InstanceSecurityGroup
-      #Tags:
-      #  - Key: !Ref InstanceTagKey
-      #    Value: !Ref InstanceTagValue
-            
-  #InstanceProfile:
-  #  Type: AWS::IAM::InstanceProfile
-  #  Properties:
-  #    Path: /
-  #    Roles:
-  #      - !Ref InstanceRole
-  #
-  #InstanceRole:
-  #  Type: AWS::IAM::Role
-  #  Properties:
-  #    AssumeRolePolicyDocument:
-  #      Version: 2012-10-17
-  #      Statement:
-  #        - Effect: Allow
-  #          Action: sts:AssumeRole
-  #          Principal:
-  #            Service:
-  #              - ec2.amazonaws.com
-  #    ManagedPolicyArns:
-  #      - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
-  
+
   
 Outputs:
   Instance1:
