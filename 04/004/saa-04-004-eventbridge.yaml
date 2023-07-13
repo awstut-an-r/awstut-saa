@@ -3,13 +3,7 @@ AWSTemplateFormatVersion: 2010-09-09
 Parameters:
   Instance:
     Type: String
-    
-  #InstanceTagKey:
-  #  Type: String
-  #  
-  #InstanceTagValue:
-  #  Type: String
-    
+
   Prefix:
     Type: String
 
@@ -19,79 +13,30 @@ Resources:
     Type: AWS::Scheduler::Schedule
     Properties: 
       Description: StartInstance
-      #EndDate: String
       FlexibleTimeWindow: 
-        #MaximumWindowInMinutes: Double
         Mode: "OFF"
-      #GroupName: String
-      #KmsKeyArn: String
       Name: !Sub "${Prefix}-StartInstanceSchedule"
       ScheduleExpression: cron(0,10,20,30,40,50 * * * ? *)
-      #ScheduleExpressionTimezone: String
-      #StartDate: String
       State: ENABLED
       Target: 
         Arn: arn:aws:scheduler:::aws-sdk:ec2:startInstances
-        #DeadLetterConfig: 
-        #  DeadLetterConfig
-        #EcsParameters: 
-        #  EcsParameters
-        #EventBridgeParameters: 
-        #  EventBridgeParameters
         Input: !Sub '{"InstanceIds": ["${Instance}"]}'
-        #KinesisParameters: 
-        #  KinesisParameters
-        #RetryPolicy: 
-        #  RetryPolicy
         RoleArn: !GetAtt SchedulerRole.Arn
-        #SageMakerPipelineParameters: 
-        #  SageMakerPipelineParameters
-        #SqsParameters: 
-        #  SqsParameters
         
   StopInstanceSchedule:
     Type: AWS::Scheduler::Schedule
     Properties: 
       Description: StopInstance
-      #EndDate: String
       FlexibleTimeWindow: 
-        #MaximumWindowInMinutes: Double
         Mode: "OFF"
-      #  FlexibleTimeWindow
-      #GroupName: String
-      #KmsKeyArn: String
       Name: !Sub "${Prefix}-StopInstanceSchedule"
       ScheduleExpression: cron(5,15,25,35,45,55 * * * ? *)
-      #ScheduleExpressionTimezone: String
-      #StartDate: String
       State: ENABLED
       Target: 
         Arn: arn:aws:scheduler:::aws-sdk:ec2:stopInstances
-        #DeadLetterConfig: 
-        #  DeadLetterConfig
-        #EcsParameters: 
-        #  EcsParameters
-        #EventBridgeParameters: 
-        #  EventBridgeParameters
         Input: !Sub '{"InstanceIds": ["${Instance}"]}'
-        #KinesisParameters: 
-        #  KinesisParameters
-        #RetryPolicy: 
-        #  RetryPolicy
         RoleArn: !GetAtt SchedulerRole.Arn
-        #SageMakerPipelineParameters: 
-        #  SageMakerPipelineParameters
-        #SqsParameters: 
-        #  SqsParameters
-        
-  #ScheduleGroup:
-  #  Type: AWS::Scheduler::ScheduleGroup
-  #  Properties: 
-  #    Name: !Sub "${Prefix}-ScheduleGroup"
-  #    Tags: 
-  #      - Key: !Ref InstanceTagKey
-  #        Value: !Ref InstanceTagValue
-          
+
   SchedulerRole:
     Type: AWS::IAM::Role
     DeletionPolicy: Delete
@@ -104,8 +49,6 @@ Resources:
             Principal:
               Service:
                 - scheduler.amazonaws.com
-      #ManagedPolicyArns:
-      #  - arn:aws:iam::aws:policy/service-role/AmazonSSMAutomationRole
       Policies:
         - PolicyName: CreateImagePolicy
           PolicyDocument:
