@@ -18,13 +18,7 @@ Parameters:
     
   CidrIp3:
     Type: String
-    
-  #HTTPSPort:
-  #  Type: Number
-  #  
-  #MySQLPort:
-  #  Type: Number
-    
+
   Prefix:
     Type: String
     
@@ -37,8 +31,6 @@ Resources:
     Type: AWS::EC2::VPC
     Properties:
       CidrBlock: !Ref VPCCidrBlock
-      #EnableDnsHostnames: true
-      #EnableDnsSupport: true
 
   PrivateSubnet1:
     Type: AWS::EC2::Subnet
@@ -60,49 +52,14 @@ Resources:
       CidrBlock: !Ref CidrIp3
       VpcId: !Ref VPC
       AvailabilityZone: !Sub "${AWS::Region}${AvailabilityZone3}"
-      
-  #PrivateRouteTable:
-  #  Type: AWS::EC2::RouteTable
-  #  Properties:
-  #    VpcId: !Ref VPC
-  #    
-  #PrivateSubnetRouteTableAssociation:
-  #  Type: AWS::EC2::SubnetRouteTableAssociation
-  #  Properties:
-  #    SubnetId: !Ref PrivateSubnet1
-  #    RouteTableId: !Ref PrivateRouteTable
-      
+
   InstanceSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupName: !Sub "${Prefix}-InstanceSecurityGroup"
       GroupDescription: Deny All.
       VpcId: !Ref VPC
-          
-  #DBSecurityGroup:
-  #  Type: AWS::EC2::SecurityGroup
-  #  Properties:
-  #    GroupName: !Sub "${Prefix}-DBSecurityGroup"
-  #    GroupDescription: DBSecurityGroup.
-  #    VpcId: !Ref VPC
-  #    SecurityGroupIngress:
-  #      - IpProtocol: tcp
-  #        FromPort: !Ref MySQLPort
-  #        ToPort: !Ref MySQLPort
-  #        SourceSecurityGroupId: !Ref InstanceSecurityGroup
-  #    
-  #EndpointSecurityGroup:
-  #  Type: AWS::EC2::SecurityGroup
-  #  Properties:
-  #    GroupName: !Sub "${Prefix}-EndpointSecurityGroup"
-  #    GroupDescription: Allow HTTPS from InstanceSecurityGroup.
-  #    VpcId: !Ref VPC
-  #    SecurityGroupIngress:
-  #      - IpProtocol: tcp
-  #        FromPort: !Ref HTTPSPort
-  #        ToPort: !Ref HTTPSPort
-  #        SourceSecurityGroupId: !Ref InstanceSecurityGroup
-          
+
           
 Outputs:
   VPC:
@@ -116,15 +73,6 @@ Outputs:
     
   PrivateSubnet3:
     Value: !Ref PrivateSubnet3
-      
-  #PrivateRouteTable:
-  #  Value: !Ref PrivateRouteTable
-    
+
   InstanceSecurityGroup:
     Value: !Ref InstanceSecurityGroup
-    
-  #DBSecurityGroup:
-  #  Value: !Ref DBSecurityGroup
-  #    
-  #EndpointSecurityGroup:
-  #  Value: !Ref EndpointSecurityGroup
