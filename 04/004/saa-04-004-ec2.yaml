@@ -1,0 +1,103 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  ImageId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+
+  InstanceSecurityGroup:
+    Type: String
+
+  InstanceSubnet1:
+    Type: String
+    
+  InstanceSubnet2:
+    Type: String
+    
+  InstanceSubnet3:
+    Type: String
+    
+  #InstanceTagKey:
+  #  Type: String
+  #  
+  #InstanceTagValue:
+  #  Type: String
+
+  InstanceType:
+    Type: String
+    
+
+Resources:
+  Instance1:
+    Type: AWS::EC2::Instance
+    Properties:
+      #IamInstanceProfile: !Ref InstanceProfile
+      ImageId: !Ref ImageId
+      InstanceType: !Ref InstanceType
+      NetworkInterfaces:
+        - DeviceIndex: 0
+          SubnetId: !Ref InstanceSubnet1
+          GroupSet:
+            - !Ref InstanceSecurityGroup
+      #UserData: !Base64 |
+      #  #!/bin/bash -xe
+      #  dnf update -y
+      #  dnf install -y mariadb105
+      
+  Instance2:
+    Type: AWS::EC2::Instance
+    Properties:
+      #IamInstanceProfile: !Ref InstanceProfile
+      ImageId: !Ref ImageId
+      InstanceType: !Ref InstanceType
+      NetworkInterfaces:
+        - DeviceIndex: 0
+          SubnetId: !Ref InstanceSubnet2
+          GroupSet:
+            - !Ref InstanceSecurityGroup
+            
+  Instance3:
+    Type: AWS::EC2::Instance
+    Properties:
+      #IamInstanceProfile: !Ref InstanceProfile
+      ImageId: !Ref ImageId
+      InstanceType: !Ref InstanceType
+      NetworkInterfaces:
+        - DeviceIndex: 0
+          SubnetId: !Ref InstanceSubnet3
+          GroupSet:
+            - !Ref InstanceSecurityGroup
+      #Tags:
+      #  - Key: !Ref InstanceTagKey
+      #    Value: !Ref InstanceTagValue
+            
+  #InstanceProfile:
+  #  Type: AWS::IAM::InstanceProfile
+  #  Properties:
+  #    Path: /
+  #    Roles:
+  #      - !Ref InstanceRole
+  #
+  #InstanceRole:
+  #  Type: AWS::IAM::Role
+  #  Properties:
+  #    AssumeRolePolicyDocument:
+  #      Version: 2012-10-17
+  #      Statement:
+  #        - Effect: Allow
+  #          Action: sts:AssumeRole
+  #          Principal:
+  #            Service:
+  #              - ec2.amazonaws.com
+  #    ManagedPolicyArns:
+  #      - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+  
+  
+Outputs:
+  Instance1:
+    Value: !Ref Instance1
+    
+  Instance2:
+    Value: !Ref Instance2
+    
+  Instance3:
+    Value: !Ref Instance3

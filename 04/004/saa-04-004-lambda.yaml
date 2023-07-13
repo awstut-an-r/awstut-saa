@@ -1,0 +1,173 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  Architecture:
+    Type: String
+
+  #CodeS3Bucket:
+  #  Type: String
+  #  
+  #EphemeralStorageSize:
+  #  Type: Number
+
+  Handler:
+    Type: String
+    
+  Instance:
+    Type: String
+    
+  #LayerPackage:
+  #  Type: String
+  #  
+  #LayerS3Key:
+  #  Type: String
+    
+  Prefix:
+    Type: String
+    
+  Runtime:
+    Type: String
+    
+  Timeout:
+    Type: Number
+    
+  #UrlsParameter:
+  #  Type: String
+    
+    
+Resources:
+  #LambdaLayer:
+  #  Type: AWS::Lambda::LayerVersion
+  #  DependsOn:
+  #    - CustomResource
+  #  Properties:
+  #    CompatibleArchitectures:
+  #      - !Ref Architecture
+  #    CompatibleRuntimes:
+  #      - !Ref Runtime
+  #    Content:
+  #      S3Bucket: !Ref CodeS3Bucket
+  #      S3Key: !Ref LayerS3Key
+  #    Description: !Ref Prefix
+  #    LayerName: !Ref Prefix
+  #    #LicenseInfo: MIT
+  #    
+  #CustomResource:
+  #  Type: Custom::CustomResource
+  #  Properties:
+  #    ServiceToken: !GetAtt Function1.Arn
+  
+  StartInstanceFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Environment:
+        Variables:
+          INSTANCE_ID: !Ref Instance
+          REGION: !Ref AWS::Region
+      Code:
+        ZipFile: |
+          import boto3
+          import os
+          
+          instance_id = os.environ['INSTANCE_ID']
+          region = os.environ['REGION']
+          
+          ec2_client = boto3.client('ec2', region_name=region)
+          
+          def lambda_handler(event, context):
+            response = ec2_client.start_instances(
+              InstanceIds=(instance_id,)
+            )
+            print(response)
+      FunctionName: !Sub "${Prefix}-StartInstance"
+      Handler: !Ref Handler
+      Runtime: !Ref Runtime
+      Role: !GetAtt FunctionRole.Arn
+      Timeout: !Ref Timeout
+      
+  StopInstanceFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Environment:
+        Variables:
+          INSTANCE_ID: !Ref Instance
+          REGION: !Ref AWS::Region
+      Code:
+        ZipFile: |
+          import boto3
+          import os
+          
+          instance_id = os.environ['INSTANCE_ID']
+          region = os.environ['REGION']
+          
+          ec2_client = boto3.client('ec2', region_name=region)
+          
+          def lambda_handler(event, context):
+            response = ec2_client.stop_instances(
+              InstanceIds=(instance_id,)
+            )
+            print(response)
+      FunctionName: !Sub "${Prefix}-StopInstance"
+      Handler: !Ref Handler
+      Runtime: !Ref Runtime
+      Role: !GetAtt FunctionRole.Arn
+      Timeout: !Ref Timeout
+      
+  FunctionRole:
+    Type: AWS::IAM::Role
+    DeletionPolicy: Delete
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: InstanceStartStopPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ec2:StartInstances
+                  - ec2:StopInstances
+                Resource: !Sub "arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:instance/${Instance}"
+  
+  StartInstanceScheduleRule:
+    Type: AWS::Events::Rule
+    Properties:
+      ScheduleExpression: cron(0,10,20,30,40,50 * * * ? *)
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt StartInstanceFunction.Arn
+          Id: !Sub "${Prefix}-StartInstanceScheduleRule"
+          
+  StopInstanceScheduleRule:
+    Type: AWS::Events::Rule
+    Properties:
+      ScheduleExpression: cron(5,15,25,35,45,55 * * * ? *)
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt StopInstanceFunction.Arn
+          Id: !Sub "${Prefix}-StopInstanceScheduleRule"
+          
+  StartInstanceFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt StartInstanceFunction.Arn
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt StartInstanceScheduleRule.Arn
+      
+  StopInstanceFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt StopInstanceFunction.Arn
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt StopInstanceScheduleRule.Arn

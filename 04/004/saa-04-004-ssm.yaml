@@ -1,0 +1,153 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  Instance:
+    Type: String
+    
+  Prefix:
+    Type: String
+
+
+Resources:
+  MaintenanceWindow1:
+    Type: AWS::SSM::MaintenanceWindow
+    Properties: 
+      AllowUnassociatedTargets: true
+      Cutoff: 1
+      Description: StartInstance
+      Duration: 2
+      #EndDate: String
+      Name: !Sub "${Prefix}-MaintenanceWindow1"
+      Schedule: cron(0,10,20,30,40,50 * * * ? *)
+      #ScheduleOffset: Integer
+      ScheduleTimezone: Asia/Tokyo
+      #StartDate: String
+      #Tags: 
+      #  - Tag
+
+  MaintenanceWindowTarget1:
+    Type: AWS::SSM::MaintenanceWindowTarget
+    Properties: 
+      #Description: My-First-Maintenance-Window-Target
+      Name: !Sub "${Prefix}-MaintenanceWindowTarget1"
+      #OwnerInformation: String
+      ResourceType: INSTANCE
+      Targets: 
+        #- Key: !Sub "tag:${TagKey}"
+        - Key: InstanceIds
+          Values:
+            - !Ref Instance
+      WindowId: !Ref MaintenanceWindow1
+
+  MaintenanceWindowTask1:
+    Type: AWS::SSM::MaintenanceWindowTask
+    Properties: 
+      #CutoffBehavior: String
+      #Description: My-First-Maintenance-Window
+      #LoggingInfo: 
+      #  LoggingInfo
+      MaxConcurrency: 1
+      MaxErrors: 1
+      Name: !Sub "${Prefix}-MaintenanceWindowTask1"
+      Priority: 10
+      #ServiceRoleArn: String
+      Targets: 
+        - Key: WindowTargetIds
+          Values:
+            - !Ref MaintenanceWindowTarget1
+      TaskArn: AWS-StartEC2Instance
+      TaskInvocationParameters: 
+        MaintenanceWindowAutomationParameters:
+          #DocumentVersion: String
+          Parameters:
+            AutomationAssumeRole:
+              - !GetAtt SSMAutomationRole.Arn
+            InstanceId:
+              #- "{{TARGET_ID}}"
+              - "{{RESOURCE_ID}}"
+      TaskType: AUTOMATION
+      WindowId: !Ref MaintenanceWindow1
+              
+  MaintenanceWindow2:
+    Type: AWS::SSM::MaintenanceWindow
+    Properties: 
+      AllowUnassociatedTargets: true
+      Cutoff: 1
+      Description: StartInstance
+      Duration: 2
+      #EndDate: String
+      Name: !Sub "${Prefix}-MaintenanceWindow2"
+      Schedule: cron(5,15,25,35,45,55 * * * ? *)
+      #ScheduleOffset: Integer
+      ScheduleTimezone: Asia/Tokyo
+      #StartDate: String
+      #Tags: 
+      #  - Tag
+
+  MaintenanceWindowTarget2:
+    Type: AWS::SSM::MaintenanceWindowTarget
+    Properties: 
+      #Description: My-First-Maintenance-Window-Target
+      Name: !Sub "${Prefix}-MaintenanceWindowTarget1"
+      #OwnerInformation: String
+      ResourceType: INSTANCE
+      Targets: 
+        #- Key: !Sub "tag:${TagKey}"
+        - Key: InstanceIds
+          Values:
+            - !Ref Instance
+      WindowId: !Ref MaintenanceWindow2
+
+  MaintenanceWindowTask2:
+    Type: AWS::SSM::MaintenanceWindowTask
+    Properties: 
+      #CutoffBehavior: String
+      #Description: My-First-Maintenance-Window
+      #LoggingInfo: 
+      #  LoggingInfo
+      MaxConcurrency: 1
+      MaxErrors: 1
+      Name: !Sub "${Prefix}-MaintenanceWindowTask2"
+      Priority: 10
+      #ServiceRoleArn: String
+      Targets: 
+        - Key: WindowTargetIds
+          Values:
+            - !Ref MaintenanceWindowTarget2
+      TaskArn: AWS-StopEC2Instance
+      TaskInvocationParameters: 
+        MaintenanceWindowAutomationParameters:
+          #DocumentVersion: String
+          Parameters:
+            AutomationAssumeRole:
+              - !GetAtt SSMAutomationRole.Arn
+            InstanceId:
+              #- "{{TARGET_ID}}"
+              - "{{RESOURCE_ID}}"
+      TaskType: AUTOMATION
+      WindowId: !Ref MaintenanceWindow2
+
+  SSMAutomationRole:
+    Type: AWS::IAM::Role
+    DeletionPolicy: Delete
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Principal:
+              Service:
+                - ssm.amazonaws.com
+      #ManagedPolicyArns:
+      #  - arn:aws:iam::aws:policy/service-role/AmazonSSMAutomationRole
+      Policies:
+        - PolicyName: CreateImagePolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ec2:StartInstances
+                  - ec2:StopInstances
+                Resource: !Sub "arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:instance/${Instance}"
