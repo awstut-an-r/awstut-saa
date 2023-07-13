@@ -4,24 +4,12 @@ Parameters:
   Architecture:
     Type: String
 
-  #CodeS3Bucket:
-  #  Type: String
-  #  
-  #EphemeralStorageSize:
-  #  Type: Number
-
   Handler:
     Type: String
     
   Instance:
     Type: String
-    
-  #LayerPackage:
-  #  Type: String
-  #  
-  #LayerS3Key:
-  #  Type: String
-    
+
   Prefix:
     Type: String
     
@@ -30,33 +18,9 @@ Parameters:
     
   Timeout:
     Type: Number
-    
-  #UrlsParameter:
-  #  Type: String
-    
+
     
 Resources:
-  #LambdaLayer:
-  #  Type: AWS::Lambda::LayerVersion
-  #  DependsOn:
-  #    - CustomResource
-  #  Properties:
-  #    CompatibleArchitectures:
-  #      - !Ref Architecture
-  #    CompatibleRuntimes:
-  #      - !Ref Runtime
-  #    Content:
-  #      S3Bucket: !Ref CodeS3Bucket
-  #      S3Key: !Ref LayerS3Key
-  #    Description: !Ref Prefix
-  #    LayerName: !Ref Prefix
-  #    #LicenseInfo: MIT
-  #    
-  #CustomResource:
-  #  Type: Custom::CustomResource
-  #  Properties:
-  #    ServiceToken: !GetAtt Function1.Arn
-  
   StartInstanceFunction:
     Type: AWS::Lambda::Function
     Properties:
