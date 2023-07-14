@@ -67,7 +67,7 @@ Resources:
   MaintenanceWindowTarget2:
     Type: AWS::SSM::MaintenanceWindowTarget
     Properties: 
-      Name: !Sub "${Prefix}-MaintenanceWindowTarget1"
+      Name: !Sub "${Prefix}-MaintenanceWindowTarget2"
       ResourceType: INSTANCE
       Targets: 
         - Key: InstanceIds
