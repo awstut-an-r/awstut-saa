@@ -1,0 +1,86 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  HTTPPort:
+    Type: Number
+    
+  NLBSecurityGroup:
+    Type: String
+    
+  Prefix:
+    Type: String
+    
+  PublicSubnet1:
+    Type: String
+    
+  PublicSubnet2:
+    Type: String
+    
+  VPC:
+    Type: String
+    
+  HealthyThresholdCount:
+    Type: Number
+    
+  #HealthCheckTimeoutSeconds:
+  #  Type: Number
+    
+  HealthCheckIntervalSeconds:
+    Type: Number
+    
+  UnhealthyThresholdCount:
+    Type: Number
+    
+  #HttpCode:
+  #  Type: Number
+
+    
+    
+Resources:
+  NLB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub "${Prefix}-ALB"
+      Scheme: internet-facing
+      SecurityGroups:
+        - !Ref NLBSecurityGroup
+      Subnets:
+        - !Ref PublicSubnet1
+        - !Ref PublicSubnet2
+      #Type: application
+      Type: network
+      
+  NLBTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      VpcId: !Ref VPC
+      Name: !Sub "${Prefix}-NLBTargetGroup"
+      Protocol: TCP
+      Port: !Ref HTTPPort
+      #TargetGroupAttributes:
+      #  - Key: preserve_client_ip.enabled
+      #    Value: false
+      HealthCheckProtocol: TCP
+      #HealthCheckPath: /
+      #HealthCheckPort: traffic-port
+      HealthyThresholdCount: !Ref HealthyThresholdCount
+      #HealthCheckTimeoutSeconds: !Ref HealthCheckTimeoutSeconds
+      HealthCheckIntervalSeconds: !Ref HealthCheckIntervalSeconds
+      UnhealthyThresholdCount: !Ref UnhealthyThresholdCount
+      #Matcher: 
+      #  HttpCode: !Ref HttpCode
+        
+  NLBListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties: 
+      DefaultActions: 
+        - TargetGroupArn: !Ref NLBTargetGroup
+          Type: forward
+      LoadBalancerArn: !Ref NLB
+      Port: !Ref HTTPPort
+      Protocol: TCP
+      
+      
+Outputs:
+  NLBTargetGroup:
+    Value: !Ref NLBTargetGroup
