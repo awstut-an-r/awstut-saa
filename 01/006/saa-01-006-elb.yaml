@@ -21,20 +21,13 @@ Parameters:
     
   HealthyThresholdCount:
     Type: Number
-    
-  #HealthCheckTimeoutSeconds:
-  #  Type: Number
-    
+
   HealthCheckIntervalSeconds:
     Type: Number
     
   UnhealthyThresholdCount:
     Type: Number
-    
-  #HttpCode:
-  #  Type: Number
 
-    
     
 Resources:
   NLB:
@@ -47,7 +40,6 @@ Resources:
       Subnets:
         - !Ref PublicSubnet1
         - !Ref PublicSubnet2
-      #Type: application
       Type: network
       
   NLBTargetGroup:
@@ -57,18 +49,10 @@ Resources:
       Name: !Sub "${Prefix}-NLBTargetGroup"
       Protocol: TCP
       Port: !Ref HTTPPort
-      #TargetGroupAttributes:
-      #  - Key: preserve_client_ip.enabled
-      #    Value: false
       HealthCheckProtocol: TCP
-      #HealthCheckPath: /
-      #HealthCheckPort: traffic-port
       HealthyThresholdCount: !Ref HealthyThresholdCount
-      #HealthCheckTimeoutSeconds: !Ref HealthCheckTimeoutSeconds
       HealthCheckIntervalSeconds: !Ref HealthCheckIntervalSeconds
       UnhealthyThresholdCount: !Ref UnhealthyThresholdCount
-      #Matcher: 
-      #  HttpCode: !Ref HttpCode
         
   NLBListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
