@@ -15,10 +15,7 @@ Parameters:
     
   PublicSubnet2:
     Type: String
-    
-  #SSMParameter:
-  #  Type: String
-    
+
   VPC:
     Type: String
     
