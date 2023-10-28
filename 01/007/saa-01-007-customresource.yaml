@@ -40,7 +40,6 @@ Resources:
           region = os.environ['REGION']
           
           ssm_client = boto3.client('ssm', region_name=region)
-          #ssm_client = boto3.client('ssm')
            
           CREATE = 'Create'
           #DELETE = 'Delete'
@@ -56,13 +55,7 @@ Resources:
                   Overwrite=True
                 )
                 print(response)
-                
-              #elif event['RequestType'] == DELETE:
-              #  response = ssm_client.delete_parameter(
-              #    Name=parameter_name
-              #  )
-              #  print(response)
-              
+
               cfnresponse.send(event, context, cfnresponse.SUCCESS, response_data)
               
             except Exception as e:
@@ -70,7 +63,6 @@ Resources:
               cfnresponse.send(event, context, cfnresponse.FAILED, response_data)
       Environment:
         Variables:
-          #CERTIFICATE: !Ref Certificate
           PARAMETER_NAME: !Ref SSMParameter
           PARAMETER_VALUE: !Ref ALBDNSName
           REGION: !Ref SSMParameterRegion
@@ -101,5 +93,4 @@ Resources:
               - Effect: Allow
                 Action:
                   - ssm:PutParameter
-                  #- ssm:DeleteParameter
                 Resource: "*"
