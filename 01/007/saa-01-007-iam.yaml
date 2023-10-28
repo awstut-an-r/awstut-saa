@@ -1,6 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
 
-#Parameters:
 
 Resources:
   AdministrationRole:
@@ -50,6 +49,3 @@ Resources:
 Outputs:
   AdministrationRoleArn:
     Value: !GetAtt AdministrationRole.Arn
-    
-  #ExecutionRoleArn:
-  #  Value: !GetAtt ExecutionRole.Arn
