@@ -13,10 +13,6 @@ Parameters:
     Type: String
     Default: [domain-name]
     
-  #HostedZoneId:
-  #  Type: String
-  #  Default: Z023054218FS37XTCMMPY
-    
   ALBHostedZoneId1:
     Type: String
     Default: Z14GRHDCWA56QT # ap-notheast-1
@@ -56,23 +52,7 @@ Parameters:
   Region2:
     Type: String
     Default: us-east-1
-    
-  #ACMRegion:
-  #  Type: String
-  #  Default: us-east-1
-    
-  #ACMParameterStoreName:
-  #  Type: String
-  #  Default: 
-    
-  #AppRegion:
-  #  Type: String
-  #  Default: ap-northeast-1
-    
-  #DistributionHostedZoneId:
-  #  Type: String
-  #  Default: Z2FDTNDATAQYW2
-  
+
 
 Resources:
   SSMStack:
@@ -122,12 +102,7 @@ Resources:
         ALBHostedZoneId1: !Ref ALBHostedZoneId1
         ALBHostedZoneId2: !Ref ALBHostedZoneId2
         DomainName: !Ref DomainName
-        #FailureThreshold: 3
-        #HTTPPort: !Ref HTTPPort
-        #HostedZoneId: !Ref HostedZoneId
         Region1: !Ref Region1
         Region2: !Ref Region2
-        #RequestInterval: 30
         SSMParameterALBDNSName1: !GetAtt SSMStack.Outputs.Parameter1
         SSMParameterALBDNSName2: !GetAtt SSMStack.Outputs.Parameter2
-        #TTL: 60
