@@ -9,162 +9,39 @@ Parameters:
 
   DomainName:
     Type: String
-    
-  #FailureThreshold:
-  #  Type: Number
-    
-  #HTTPPort:
-  #  Type: Number
-    
-  #HostedZoneId:
-  #  Type: String
-    
+
   Region1:
     Type: String
     
   Region2:
     Type: String
-    
-  #RequestInterval:
-  #  Type: Number
-    
+
   SSMParameterALBDNSName1:
     Type: String
     
   SSMParameterALBDNSName2:
     Type: String
-    
-  #TTL:
-  #  Type: Number
-    
+
 
 Resources:
-  #HealthCheck1:
-  #  Type: AWS::Route53::HealthCheck
-  #  Properties:
-  #    HealthCheckConfig:
-  #      FailureThreshold: !Ref FailureThreshold
-  #      FullyQualifiedDomainName: !Sub "{{resolve:ssm:${SSMParameterALBDNSName1}}}"
-  #      MeasureLatency: true
-  #      Port: !Ref HTTPPort
-  #      RequestInterval: !Ref RequestInterval
-  #      ResourcePath: /
-  #      Type: HTTP
-  #      
-  #HealthCheck2:
-  #  Type: AWS::Route53::HealthCheck
-  #  Properties:
-  #    HealthCheckConfig:
-  #      FailureThreshold: !Ref FailureThreshold
-  #      FullyQualifiedDomainName: !Sub "{{resolve:ssm:${SSMParameterALBDNSName2}}}"
-  #      MeasureLatency: true
-  #      Port: !Ref HTTPPort
-  #      RequestInterval: !Ref RequestInterval
-  #      ResourcePath: /
-  #      Type: HTTP
-  
   RecordSetGroup:
     Type: AWS::Route53::RecordSetGroup
     Properties:
-      #Comment: String
-      #HostedZoneId: String
-      #HostedZoneName: !Ref DomainName
       HostedZoneName: !Sub "${DomainName}."
       RecordSets: 
         - AliasTarget: 
             DNSName: !Sub "{{resolve:ssm:${SSMParameterALBDNSName1}}}"
-            #EvaluateTargetHealth: true
             HostedZoneId: !Ref ALBHostedZoneId1
-          #CidrRoutingConfig: 
-          #  CidrRoutingConfig
-          #Failover: String
           GeoLocation: 
             ContinentCode: AS
-            #CountryCode: JP
-            #SubdivisionCode: String
-          #HealthCheckId: String
-          #HostedZoneId: String
-          #HostedZoneName: String
-          #MultiValueAnswer: Boolean
           Name: !Ref DomainName
-          #Region: !Ref Region1
-          #ResourceRecords: 
-          #  - String
           SetIdentifier: !Ref Region1
-          #TTL: String
           Type: A
-          #Weight: Integer
         - AliasTarget: 
             DNSName: !Sub "{{resolve:ssm:${SSMParameterALBDNSName2}}}"
-            #EvaluateTargetHealth: true
             HostedZoneId: !Ref ALBHostedZoneId2
-          #CidrRoutingConfig: 
-          #  CidrRoutingConfig
-          #Failover: String
           GeoLocation: 
             ContinentCode: NA
-            #CountryCode: US
-            #SubdivisionCode: String
-          #HealthCheckId: String
-          #HostedZoneId: String
-          #HostedZoneName: String
-          #MultiValueAnswer: Boolean
           Name: !Ref DomainName
-          #Region: !Ref Region1
-          #ResourceRecords: 
-          #  - String
           SetIdentifier: !Ref Region2
-          #TTL: String
           Type: A
-          #Weight: Integer
-          
-          
-  #RecordSetGroup:
-  #  Type: AWS::Route53::RecordSetGroup
-  #  Properties:
-  #    HostedZoneName: !Sub "${DomainName}."
-  #    RecordSets:
-  #      - AliasTarget: 
-  #          DNSName: !Sub "{{resolve:ssm:${SSMParameterALBDNSName1}}}"
-  #          EvaluateTargetHealth: true
-  #          HostedZoneId: !Ref ALBHostedZoneId1
-  #        #CidrRoutingConfig: 
-  #        #  CidrRoutingConfig
-  #        #Failover: String
-  #        #GeoLocation: 
-  #        #  GeoLocation
-  #        HealthCheckId: !Ref HealthCheck1
-  #        #HostedZoneId: !Ref ALBHostedZoneId1
-  #        #HostedZoneName: String
-  #        #MultiValueAnswer: Boolean
-  #        #Name: !Sub "{{resolve:ssm:${SSMParameterALBDNSName1}}}"
-  #        Name: !Ref DomainName
-  #        Region: !Ref Region1
-  #        #ResourceRecords: 
-  #        #  - String
-  #        SetIdentifier: !Ref Region1
-  #        #TTL: !Ref TTL
-  #        Type: A
-  #        #Weight: Integer
-  #      - AliasTarget: 
-  #          DNSName: !Sub "{{resolve:ssm:${SSMParameterALBDNSName2}}}"
-  #          EvaluateTargetHealth: true
-  #          HostedZoneId: !Ref ALBHostedZoneId2
-  #        #CidrRoutingConfig: 
-  #        #  CidrRoutingConfig
-  #        #Failover: String
-  #        #GeoLocation: 
-  #        #  GeoLocation
-  #        HealthCheckId: !Ref HealthCheck2
-  #        #HostedZoneId: !Ref ALBHostedZoneId2
-  #        #HostedZoneName: String
-  #        #MultiValueAnswer: Boolean
-  #        #Name: !Sub "{{resolve:ssm:${SSMParameterALBDNSName2}}}"
-  #        Name: !Ref DomainName
-  #        Region: !Ref Region2
-  #        #ResourceRecords: 
-  #        #  - String
-  #        SetIdentifier: !Ref Region2
-  #        #TTL: !Ref TTL
-  #        Type: A
-  #        #Weight: Integer
