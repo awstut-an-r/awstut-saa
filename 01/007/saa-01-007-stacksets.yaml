@@ -1,0 +1,165 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  AdministrationRoleArn:
+    Type: String
+
+  ImageId:
+    Type: String
+
+  InstanceCapacity:
+    Type: Number
+    
+  InstanceType:
+    Type: String
+    
+  HTTPPort:
+    Type: Number
+    
+  LambdaHandler:
+    Type: String
+    
+  LambdaRuntime:
+    Type: String
+    
+  Parameter1:
+    Type: String
+    
+  Parameter2:
+    Type: String
+  
+  Prefix:
+    Type: String
+    
+  Region1:
+    Type: String
+    
+  Region2:
+    Type: String
+    
+  TemplateDir:
+    Type: String
+    
+    
+Resources:
+  #AdministrationRole:
+  #  Type: AWS::IAM::Role
+  #  #DeletionPolicy: Delete
+  #  Properties:
+  #    RoleName: AWSCloudFormationStackSetAdministrationRole
+  #    AssumeRolePolicyDocument:
+  #      Version: 2012-10-17
+  #      Statement:
+  #        - Effect: Allow
+  #          Principal:
+  #            Service: cloudformation.amazonaws.com
+  #          Action:
+  #            - sts:AssumeRole
+  #    Path: /
+  #    Policies:
+  #      - PolicyName: AssumeRole-AWSCloudFormationStackSetExecutionRole
+  #        PolicyDocument:
+  #          Version: 2012-10-17
+  #          Statement:
+  #            - Effect: Allow
+  #              Action:
+  #                - sts:AssumeRole
+  #              Resource:
+  #                - arn:*:iam::*:role/AWSCloudFormationStackSetExecutionRole
+  #
+  #ExecutionRole:
+  #  Type: AWS::IAM::Role
+  #  #DeletionPolicy: Delete
+  #  Properties:
+  #    RoleName: AWSCloudFormationStackSetExecutionRole
+  #    AssumeRolePolicyDocument:
+  #      Version: 2012-10-17
+  #      Statement:
+  #        - Effect: Allow
+  #          Principal:
+  #            AWS:
+  #              - !Ref AWS::AccountId
+  #          Action:
+  #            - sts:AssumeRole
+  #    Path: /
+  #    ManagedPolicyArns:
+  #      - !Sub "arn:${AWS::Partition}:iam::aws:policy/AdministratorAccess"
+        
+  StackSet:
+    Type: AWS::CloudFormation::StackSet
+    Properties: 
+      AdministrationRoleARN: !Ref AdministrationRoleArn
+      #AutoDeployment: 
+      #  AutoDeployment
+      #CallAs: String
+      Capabilities: 
+        - CAPABILITY_IAM
+      #Description: String
+      #ExecutionRoleName: AWSCloudFormationStackSetExecutionRole
+      #ManagedExecution: 
+      #  ManagedExecution
+      #OperationPreferences: 
+      #  OperationPreferences
+      Parameters: 
+        - ParameterKey: ImageId
+          ParameterValue: !Ref ImageId
+        - ParameterKey: InstanceCapacity
+          ParameterValue: !Ref InstanceCapacity
+        - ParameterKey: InstanceType
+          ParameterValue: !Ref InstanceType
+        - ParameterKey: HTTPPort
+          ParameterValue: !Ref HTTPPort
+        - ParameterKey: LambdaHandler
+          ParameterValue: !Ref LambdaHandler
+        - ParameterKey: LambdaRuntime
+          ParameterValue: !Ref LambdaRuntime
+        - ParameterKey: Prefix
+          ParameterValue: !Ref Prefix
+        - ParameterKey: SSMParameter
+          ParameterValue: ""
+        - ParameterKey: SSMParameterRegion
+          ParameterValue: !Ref Region1
+        - ParameterKey: TemplateDir
+          ParameterValue: !Ref TemplateDir
+      PermissionModel: SELF_MANAGED
+      StackInstancesGroup: 
+        - DeploymentTargets: 
+            #AccountFilterType: String
+            Accounts: 
+              - !Ref AWS::AccountId
+            #OrganizationalUnitIds: 
+            #  - String
+          ParameterOverrides: 
+            - ParameterKey: SSMParameter
+              ParameterValue: !Ref Parameter1
+          Regions: 
+            - !Ref Region1
+            #- !Ref Region2
+        - DeploymentTargets: 
+            #AccountFilterType: String
+            Accounts: 
+              - !Ref AWS::AccountId
+            #OrganizationalUnitIds: 
+            #  - String
+          ParameterOverrides: 
+            - ParameterKey: SSMParameter
+              ParameterValue: !Ref Parameter2
+          Regions: 
+            #- !Ref Region1
+            - !Ref Region2
+        #- DeploymentTargets: 
+        #    #AccountFilterType: String
+        #    Accounts: 
+        #      - !Ref AWS::AccountId
+        #    #OrganizationalUnitIds: 
+        #    #  - String
+        #  ParameterOverrides: 
+        #    - ParameterKey: Memory
+        #      ParameterValue: 256
+        #  Regions: 
+        #    - us-east-1
+      StackSetName: !Sub "${Prefix}-stacksets"
+      #Tags: 
+      #  - Tag
+      #TemplateBody: String
+      TemplateURL: !Sub "${TemplateDir}/${Prefix}-stacksets-template.yaml"

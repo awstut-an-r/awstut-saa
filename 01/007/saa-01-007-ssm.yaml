@@ -1,0 +1,35 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  Prefix:
+    Type: String
+
+  Region1:
+    Type: String
+    
+  Region2:
+    Type: String
+    
+
+Resources:
+  Parameter1:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "${Prefix}-alb-dns-name-${Region1}"
+      Type: String
+      Value: " "
+      
+  Parameter2:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "${Prefix}-alb-dns-name-${Region2}"
+      Type: String
+      Value: " "
+      
+      
+Outputs:
+  Parameter1:
+    Value: !Ref Parameter1
+    
+  Parameter2:
+    Value: !Ref Parameter2

@@ -1,0 +1,133 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  TemplateBucketName:
+    Type: String
+    Default: awstut-bucket
+    
+  Prefix:
+    Type: String
+    Default: saa-01-007
+    
+  DomainName:
+    Type: String
+    Default: [domain-name]
+    
+  #HostedZoneId:
+  #  Type: String
+  #  Default: Z023054218FS37XTCMMPY
+    
+  ALBHostedZoneId1:
+    Type: String
+    Default: Z14GRHDCWA56QT # ap-notheast-1
+    
+  ALBHostedZoneId2:
+    Type: String
+    Default: Z35SXDOTRQ7X7K # us-east-1
+    
+  ImageId:
+    Type: String
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-arm64-gp2
+    
+  InstanceCapacity:
+    Type: Number
+    Default: 1
+    
+  InstanceType:
+    Type: String
+    Default: t4g.nano
+    
+  HTTPPort:
+    Type: Number
+    Default: 80
+    
+  LambdaHandler:
+    Type: String
+    Default: index.lambda_handler
+    
+  LambdaRuntime:
+    Type: String
+    Default: python3.8
+    
+  Region1:
+    Type: String
+    Default: ap-northeast-1
+    
+  Region2:
+    Type: String
+    Default: us-east-1
+    
+  #ACMRegion:
+  #  Type: String
+  #  Default: us-east-1
+    
+  #ACMParameterStoreName:
+  #  Type: String
+  #  Default: 
+    
+  #AppRegion:
+  #  Type: String
+  #  Default: ap-northeast-1
+    
+  #DistributionHostedZoneId:
+  #  Type: String
+  #  Default: Z2FDTNDATAQYW2
+  
+
+Resources:
+  SSMStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-ssm.yaml"
+      Parameters:
+        Prefix: !Ref Prefix
+        Region1: !Ref Region1
+        Region2: !Ref Region2
+
+  IAMStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-iam.yaml"
+      
+  StackSetsStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn:
+      - SSMStack
+      - IAMStack
+    Properties:
+      TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-stacksets.yaml"
+      Parameters:
+        AdministrationRoleArn: !GetAtt IAMStack.Outputs.AdministrationRoleArn
+        ImageId: !Ref ImageId
+        InstanceCapacity: !Ref InstanceCapacity
+        InstanceType: !Ref InstanceType
+        HTTPPort: !Ref HTTPPort
+        LambdaHandler: !Ref LambdaHandler
+        LambdaRuntime: !Ref LambdaRuntime
+        Parameter1: !GetAtt SSMStack.Outputs.Parameter1
+        Parameter2: !GetAtt SSMStack.Outputs.Parameter2
+        Prefix: !Ref Prefix
+        Region1: !Ref Region1
+        Region2: !Ref Region2
+        TemplateDir: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}"
+        
+  Route53Stack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn:
+      - SSMStack
+      - StackSetsStack
+    Properties:
+      TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-route53.yaml"
+      Parameters:
+        ALBHostedZoneId1: !Ref ALBHostedZoneId1
+        ALBHostedZoneId2: !Ref ALBHostedZoneId2
+        DomainName: !Ref DomainName
+        #FailureThreshold: 3
+        #HTTPPort: !Ref HTTPPort
+        #HostedZoneId: !Ref HostedZoneId
+        Region1: !Ref Region1
+        Region2: !Ref Region2
+        #RequestInterval: 30
+        SSMParameterALBDNSName1: !GetAtt SSMStack.Outputs.Parameter1
+        SSMParameterALBDNSName2: !GetAtt SSMStack.Outputs.Parameter2
+        #TTL: 60
