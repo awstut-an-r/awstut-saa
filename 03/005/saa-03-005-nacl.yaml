@@ -35,8 +35,6 @@ Resources:
   NetworkAcl:
     Type: AWS::EC2::NetworkAcl
     Properties:
-      #Tags: 
-      #  - Tag
       VpcId: !Ref VPC
 
   NetworkAclEntry1Ingress:
@@ -44,9 +42,6 @@ Resources:
     Properties:
       CidrBlock: !Ref CidrIp1
       Egress: false
-      #Icmp: 
-      #  Icmp
-      #Ipv6CidrBlock: String
       NetworkAclId: !Ref NetworkAcl
       PortRange: 
         From: !Ref HTTPPort
@@ -60,9 +55,6 @@ Resources:
     Properties:
       CidrBlock: !Ref CidrIp1
       Egress: true
-      #Icmp: 
-      #  Icmp
-      #Ipv6CidrBlock: String
       NetworkAclId: !Ref NetworkAcl
       PortRange: 
         From: !Ref RandomPortFrom
@@ -76,9 +68,6 @@ Resources:
     Properties:
       CidrBlock: !Ref CidrIp2
       Egress: false
-      #Icmp: 
-      #  Icmp
-      #Ipv6CidrBlock: String
       NetworkAclId: !Ref NetworkAcl
       PortRange: 
         From: !Ref HTTPPort
@@ -92,9 +81,6 @@ Resources:
     Properties:
       CidrBlock: !Ref CidrIp2
       Egress: true
-      #Icmp: 
-      #  Icmp
-      #Ipv6CidrBlock: String
       NetworkAclId: !Ref NetworkAcl
       PortRange: 
         From: !Ref RandomPortFrom
@@ -108,9 +94,6 @@ Resources:
     Properties:
       CidrBlock: !Ref CidrIp3
       Egress: false
-      #Icmp: 
-      #  Icmp
-      #Ipv6CidrBlock: String
       NetworkAclId: !Ref NetworkAcl
       PortRange: 
         From: !Ref HTTPPort
@@ -124,9 +107,6 @@ Resources:
     Properties:
       CidrBlock: !Ref CidrIp3
       Egress: true
-      #Icmp: 
-      #  Icmp
-      #Ipv6CidrBlock: String
       NetworkAclId: !Ref NetworkAcl
       PortRange: 
         From: !Ref RandomPortFrom
