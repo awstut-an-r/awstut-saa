@@ -6,13 +6,7 @@ Parameters:
 
   PrivateSubnet1:
     Type: String
-    
-  #PrivateSubnet2:
-  #  Type: String
-    
-  #PrivateSubnet3:
-  #  Type: String
-  
+
   RouteTable:
     Type: String
     
@@ -39,8 +33,6 @@ Resources:
       ServiceName: !Sub "com.amazonaws.${AWS::Region}.ssm"
       SubnetIds:
         - !Ref PrivateSubnet1
-        #- !Ref PrivateSubnet2
-        #- !Ref PrivateSubnet3
       VpcEndpointType: Interface
       VpcId: !Ref VPC
 
@@ -53,8 +45,6 @@ Resources:
       ServiceName: !Sub "com.amazonaws.${AWS::Region}.ec2messages"
       SubnetIds:
         - !Ref PrivateSubnet1
-        #- !Ref PrivateSubnet2
-        #- !Ref PrivateSubnet3
       VpcEndpointType: Interface
       VpcId: !Ref VPC
         
@@ -67,7 +57,5 @@ Resources:
       ServiceName: !Sub "com.amazonaws.${AWS::Region}.ssmmessages"
       SubnetIds:
         - !Ref PrivateSubnet1
-        #- !Ref PrivateSubnet2
-        #- !Ref PrivateSubnet3
       VpcEndpointType: Interface
       VpcId: !Ref VPC
