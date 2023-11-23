@@ -1,0 +1,162 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  AvailabilityZone:
+    Type: String
+    
+  #AvailabilityZone2:
+  #  Type: String
+  #  
+  #AvailabilityZone3:
+  #  Type: String
+
+  CidrIp1:
+    Type: String
+    
+  CidrIp2:
+    Type: String
+    
+  CidrIp3:
+    Type: String
+    
+  CidrIp4:
+    Type: String
+    
+  CidrIp5:
+    Type: String
+    
+  HTTPPort:
+    Type: Number
+    
+  HTTPSPort:
+    Type: Number
+    
+  Prefix:
+    Type: String
+    
+  VPCCidrBlock:
+    Type: String
+
+
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VPCCidrBlock
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: !Ref CidrIp1
+      VpcId: !Ref VPC
+      AvailabilityZone: !Sub "${AWS::Region}${AvailabilityZone}"
+      
+  PrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: !Ref CidrIp2
+      VpcId: !Ref VPC
+      AvailabilityZone: !Sub "${AWS::Region}${AvailabilityZone}"
+      
+  PrivateSubnet3:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: !Ref CidrIp3
+      VpcId: !Ref VPC
+      AvailabilityZone: !Sub "${AWS::Region}${AvailabilityZone}"
+      
+  PrivateSubnet4:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: !Ref CidrIp4
+      VpcId: !Ref VPC
+      AvailabilityZone: !Sub "${AWS::Region}${AvailabilityZone}"
+      
+  PrivateSubnet5:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: !Ref CidrIp5
+      VpcId: !Ref VPC
+      AvailabilityZone: !Sub "${AWS::Region}${AvailabilityZone}"
+      
+  RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+  
+  SubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet5
+      RouteTableId: !Ref RouteTable
+      
+  InstanceSecurityGroup1:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub "${Prefix}-InstanceSecurityGroup1"
+      GroupDescription: Deny All.
+      VpcId: !Ref VPC
+      #SecurityGroupIngress:
+      #  - IpProtocol: -1
+      #    FromPort: -1
+      #    ToPort: -1
+      #    CidrIp: 0.0.0.0/0
+      
+  InstanceSecurityGroup2:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub "${Prefix}-InstanceSecurityGroup2"
+      GroupDescription: Allow HTTP from InstanceSecurityGroup1.
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: !Ref HTTPPort
+          ToPort: !Ref HTTPPort
+          #CidrIp: 0.0.0.0/0
+          SourceSecurityGroupId: !Ref InstanceSecurityGroup1
+          
+  EndpointSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub "${Prefix}-EndpointSecurityGroup"
+      GroupDescription: Allow HTTPS from InstanceSecurityGroup.
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: !Ref HTTPSPort
+          ToPort: !Ref HTTPSPort
+          SourceSecurityGroupId: !Ref InstanceSecurityGroup1
+          
+          
+Outputs:
+  VPC:
+    Value: !Ref VPC
+    
+  PrivateSubnet1:
+    Value: !Ref PrivateSubnet1
+    
+  PrivateSubnet2:
+    Value: !Ref PrivateSubnet2
+    
+  PrivateSubnet3:
+    Value: !Ref PrivateSubnet3
+    
+  PrivateSubnet4:
+    Value: !Ref PrivateSubnet4
+    
+  PrivateSubnet5:
+    Value: !Ref PrivateSubnet5
+    
+  RouteTable:
+    Value: !Ref RouteTable
+      
+  InstanceSecurityGroup1:
+    Value: !Ref InstanceSecurityGroup1
+    
+  InstanceSecurityGroup2:
+    Value: !Ref InstanceSecurityGroup2
+    
+  EndpointSecurityGroup:
+    Value: !Ref EndpointSecurityGroup

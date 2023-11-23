@@ -1,0 +1,145 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  ImageId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    
+  InstanceSecurityGroup1:
+    Type: String
+    
+  InstanceSecurityGroup2:
+    Type: String
+    
+  InstanceType:
+    Type: String
+    
+  PrivateSubnet1:
+    Type: String
+    
+  PrivateSubnet2:
+    Type: String
+    
+  PrivateSubnet3:
+    Type: String
+    
+  PrivateSubnet4:
+    Type: String
+    
+  PrivateSubnet5:
+    Type: String
+
+
+Resources:
+  #EIP:
+  #  Type: AWS::EC2::EIP
+  #  Properties:
+  #    Domain: vpc
+  #    
+  #EIPAssociation:
+  #  Type: AWS::EC2::EIPAssociation
+  #  Properties:
+  #    AllocationId: !GetAtt EIP.AllocationId
+  #    InstanceId: !Ref Instance
+      
+  Instance1:
+    Type: AWS::EC2::Instance
+    Properties:
+      IamInstanceProfile: !Ref InstanceProfile
+      ImageId: !Ref ImageId
+      InstanceType: !Ref InstanceType
+      NetworkInterfaces:
+        - DeviceIndex: 0
+          SubnetId: !Ref PrivateSubnet1
+          GroupSet:
+            - !Ref InstanceSecurityGroup1
+      #UserData: !Base64 |
+      #  #!/bin/bash -xe
+      #  yum update -y
+      #  yum install -y httpd
+      #  systemctl start httpd
+      #  systemctl enable httpd
+      #  ec2-metadata -i > /var/www/html/index.html
+      
+  Instance2:
+    Type: AWS::EC2::Instance
+    Properties:
+      IamInstanceProfile: !Ref InstanceProfile
+      ImageId: !Ref ImageId
+      InstanceType: !Ref InstanceType
+      NetworkInterfaces:
+        - DeviceIndex: 0
+          SubnetId: !Ref PrivateSubnet2
+          GroupSet:
+            - !Ref InstanceSecurityGroup1
+            
+  Instance3:
+    Type: AWS::EC2::Instance
+    Properties:
+      IamInstanceProfile: !Ref InstanceProfile
+      ImageId: !Ref ImageId
+      InstanceType: !Ref InstanceType
+      NetworkInterfaces:
+        - DeviceIndex: 0
+          SubnetId: !Ref PrivateSubnet3
+          GroupSet:
+            - !Ref InstanceSecurityGroup1
+            
+  Instance4:
+    Type: AWS::EC2::Instance
+    Properties:
+      IamInstanceProfile: !Ref InstanceProfile
+      ImageId: !Ref ImageId
+      InstanceType: !Ref InstanceType
+      NetworkInterfaces:
+        - DeviceIndex: 0
+          SubnetId: !Ref PrivateSubnet4
+          GroupSet:
+            - !Ref InstanceSecurityGroup1
+            
+  Instance5:
+    Type: AWS::EC2::Instance
+    Properties:
+      #IamInstanceProfile: !Ref InstanceProfile
+      ImageId: !Ref ImageId
+      InstanceType: !Ref InstanceType
+      NetworkInterfaces:
+        - DeviceIndex: 0
+          SubnetId: !Ref PrivateSubnet5
+          GroupSet:
+            - !Ref InstanceSecurityGroup2
+      UserData: !Base64 |
+        #!/bin/bash -xe
+        yum update -y
+        yum install -y httpd
+        systemctl start httpd
+        systemctl enable httpd
+        ec2-metadata -i > /var/www/html/index.html
+            
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: /
+      Roles:
+        - !Ref InstanceRole
+  
+  InstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+            
+            
+#Outputs:
+#  #Instance:
+#  #  Value: !Ref Instance
+#      
+#  InstancePublicDnsName:
+#    Value: !GetAtt Instance.PublicDnsName

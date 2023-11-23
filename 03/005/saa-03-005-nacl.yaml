@@ -1,0 +1,142 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  CidrIp1:
+    Type: String
+    
+  CidrIp2:
+    Type: String
+    
+  CidrIp3:
+    Type: String
+    
+  CidrIp4:
+    Type: String
+    
+  HTTPPort:
+    Type: Number
+    
+  PrivateSubnet5:
+    Type: String
+    
+  RandomPortFrom:
+    Type: Number
+    
+  RandomPortTo:
+    Type: Number
+    
+  TCPProtocolNumber:
+    Type: Number
+
+  VPC:
+    Type: String
+
+Resources:
+  NetworkAcl:
+    Type: AWS::EC2::NetworkAcl
+    Properties:
+      #Tags: 
+      #  - Tag
+      VpcId: !Ref VPC
+
+  NetworkAclEntry1Ingress:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock: !Ref CidrIp1
+      Egress: false
+      #Icmp: 
+      #  Icmp
+      #Ipv6CidrBlock: String
+      NetworkAclId: !Ref NetworkAcl
+      PortRange: 
+        From: !Ref HTTPPort
+        To: !Ref HTTPPort
+      Protocol: !Ref TCPProtocolNumber
+      RuleAction: allow
+      RuleNumber: 10
+      
+  NetworkAclEntry1Egress:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock: !Ref CidrIp1
+      Egress: true
+      #Icmp: 
+      #  Icmp
+      #Ipv6CidrBlock: String
+      NetworkAclId: !Ref NetworkAcl
+      PortRange: 
+        From: !Ref RandomPortFrom
+        To: !Ref RandomPortTo
+      Protocol: !Ref TCPProtocolNumber
+      RuleAction: allow
+      RuleNumber: 20
+      
+  NetworkAclEntry2Ingress:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock: !Ref CidrIp2
+      Egress: false
+      #Icmp: 
+      #  Icmp
+      #Ipv6CidrBlock: String
+      NetworkAclId: !Ref NetworkAcl
+      PortRange: 
+        From: !Ref HTTPPort
+        To: !Ref HTTPPort
+      Protocol: !Ref TCPProtocolNumber
+      RuleAction: allow
+      RuleNumber: 30
+      
+  NetworkAclEntry2Egress:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock: !Ref CidrIp2
+      Egress: true
+      #Icmp: 
+      #  Icmp
+      #Ipv6CidrBlock: String
+      NetworkAclId: !Ref NetworkAcl
+      PortRange: 
+        From: !Ref RandomPortFrom
+        To: !Ref RandomPortTo
+      Protocol: !Ref TCPProtocolNumber
+      RuleAction: deny
+      RuleNumber: 40
+      
+  NetworkAclEntry3Ingress:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock: !Ref CidrIp3
+      Egress: false
+      #Icmp: 
+      #  Icmp
+      #Ipv6CidrBlock: String
+      NetworkAclId: !Ref NetworkAcl
+      PortRange: 
+        From: !Ref HTTPPort
+        To: !Ref HTTPPort
+      Protocol: !Ref TCPProtocolNumber
+      RuleAction: deny
+      RuleNumber: 50
+      
+  NetworkAclEntry3Egress:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock: !Ref CidrIp3
+      Egress: true
+      #Icmp: 
+      #  Icmp
+      #Ipv6CidrBlock: String
+      NetworkAclId: !Ref NetworkAcl
+      PortRange: 
+        From: !Ref RandomPortFrom
+        To: !Ref RandomPortTo
+      Protocol: !Ref TCPProtocolNumber
+      RuleAction: allow
+      RuleNumber: 60
+      
+  NetworkAclAssociation:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties: 
+      NetworkAclId: !Ref NetworkAcl
+      SubnetId: !Ref PrivateSubnet5

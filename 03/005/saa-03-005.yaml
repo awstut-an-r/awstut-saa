@@ -1,0 +1,134 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  TemplateBucketName:
+    Type: String
+    Default: awstut-bucket
+    
+  Prefix:
+    Type: String
+    Default: saa-03-005
+    
+  CidrIp1:
+    Type: String
+    Default: 10.0.1.0/24
+    
+  CidrIp2:
+    Type: String
+    Default: 10.0.2.0/24
+    
+  CidrIp3:
+    Type: String
+    Default: 10.0.3.0/24
+    
+  CidrIp4:
+    Type: String
+    Default: 10.0.4.0/24
+    
+  CidrIp5:
+    Type: String
+    Default: 10.0.5.0/25
+    
+  HTTPPort:
+    Type: Number
+    Default: 80
+    
+  HTTPSPort:
+    Type: Number
+    Default: 443
+    
+  ImageId:
+    Type: String
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-arm64-gp2
+    
+  InstanceType:
+    Type: String
+    Default: t4g.nano
+    
+  RandomPortFrom:
+    Type: Number
+    Default: 1024
+    
+  RandomPortTo:
+    Type: Number
+    Default: 65535
+    
+  TCPProtocolNumber:
+    Type: Number
+    Default: 6
+    
+  VPCCidrBlock:
+    Type: String
+    Default: 10.0.0.0/16
+    
+
+Resources:
+  VPCStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-vpc.yaml"
+      Parameters:
+        AvailabilityZone: a
+        #AvailabilityZone1: c
+        #AvailabilityZone1: d
+        CidrIp1: !Ref CidrIp1
+        CidrIp2: !Ref CidrIp2
+        CidrIp3: !Ref CidrIp3
+        CidrIp4: !Ref CidrIp4
+        CidrIp5: !Ref CidrIp5
+        #CidrIp2: 10.0.2.0/24
+        HTTPPort: !Ref HTTPPort
+        HTTPSPort: !Ref HTTPSPort
+        Prefix: !Ref Prefix
+        VPCCidrBlock: !Ref VPCCidrBlock
+        
+  EndpointStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn:
+      - VPCStack
+    Properties:
+      TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-endpoint.yaml"
+      Parameters:
+        EndpointSecurityGroup: !GetAtt VPCStack.Outputs.EndpointSecurityGroup
+        PrivateSubnet1: !GetAtt VPCStack.Outputs.PrivateSubnet1
+        #PrivateSubnet2: !GetAtt VPCStack.Outputs.PrivateSubnet2
+        #PrivateSubnet3: !GetAtt VPCStack.Outputs.PrivateSubnet3
+        RouteTable: !GetAtt VPCStack.Outputs.RouteTable
+        VPC: !GetAtt VPCStack.Outputs.VPC
+        
+  EC2Stack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn:
+      - VPCStack
+    Properties:
+      TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-ec2.yaml"
+      Parameters:
+        #ImageId: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-arm64-gp2
+        ImageId: !Ref ImageId
+        InstanceSecurityGroup1: !GetAtt VPCStack.Outputs.InstanceSecurityGroup1
+        InstanceSecurityGroup2: !GetAtt VPCStack.Outputs.InstanceSecurityGroup2
+        InstanceType: !Ref InstanceType
+        #Prefix: !Ref Prefix
+        PrivateSubnet1: !GetAtt VPCStack.Outputs.PrivateSubnet1
+        PrivateSubnet2: !GetAtt VPCStack.Outputs.PrivateSubnet2
+        PrivateSubnet3: !GetAtt VPCStack.Outputs.PrivateSubnet3
+        PrivateSubnet4: !GetAtt VPCStack.Outputs.PrivateSubnet4
+        PrivateSubnet5: !GetAtt VPCStack.Outputs.PrivateSubnet5
+        
+  NACLStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn:
+      - EC2Stack
+    Properties:
+      TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-nacl.yaml"
+      Parameters:
+        CidrIp1: !Ref CidrIp1
+        CidrIp2: !Ref CidrIp2
+        CidrIp3: !Ref CidrIp3
+        CidrIp4: !Ref CidrIp4
+        HTTPPort: !Ref HTTPPort
+        PrivateSubnet5: !GetAtt VPCStack.Outputs.PrivateSubnet5
+        RandomPortFrom: !Ref RandomPortFrom
+        RandomPortTo: !Ref RandomPortTo
+        TCPProtocolNumber: !Ref TCPProtocolNumber
+        VPC: !GetAtt VPCStack.Outputs.VPC
