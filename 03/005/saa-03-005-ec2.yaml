@@ -30,17 +30,6 @@ Parameters:
 
 
 Resources:
-  #EIP:
-  #  Type: AWS::EC2::EIP
-  #  Properties:
-  #    Domain: vpc
-  #    
-  #EIPAssociation:
-  #  Type: AWS::EC2::EIPAssociation
-  #  Properties:
-  #    AllocationId: !GetAtt EIP.AllocationId
-  #    InstanceId: !Ref Instance
-      
   Instance1:
     Type: AWS::EC2::Instance
     Properties:
@@ -52,14 +41,7 @@ Resources:
           SubnetId: !Ref PrivateSubnet1
           GroupSet:
             - !Ref InstanceSecurityGroup1
-      #UserData: !Base64 |
-      #  #!/bin/bash -xe
-      #  yum update -y
-      #  yum install -y httpd
-      #  systemctl start httpd
-      #  systemctl enable httpd
-      #  ec2-metadata -i > /var/www/html/index.html
-      
+
   Instance2:
     Type: AWS::EC2::Instance
     Properties:
@@ -99,7 +81,6 @@ Resources:
   Instance5:
     Type: AWS::EC2::Instance
     Properties:
-      #IamInstanceProfile: !Ref InstanceProfile
       ImageId: !Ref ImageId
       InstanceType: !Ref InstanceType
       NetworkInterfaces:
@@ -135,11 +116,3 @@ Resources:
                 - ec2.amazonaws.com
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
-            
-            
-#Outputs:
-#  #Instance:
-#  #  Value: !Ref Instance
-#      
-#  InstancePublicDnsName:
-#    Value: !GetAtt Instance.PublicDnsName
