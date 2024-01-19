@@ -1,10 +1,10 @@
-# Elastic Beanstalk deployment policy: Rolling with an additional batch
+# Create network ACLs using CloudFormation
 
-https://awstut.com/en/2023/11/25/elastic-beanstalk-deployment-policy-rolling-with-an-additional-batch-en/
+https://awstut.com/en/2024/01/20/create-network-acls-using-cloudformation-en/
 
 # Architecture
 
-![dva-01-003-diagram](https://github.com/awstut-an-r/awstut-fa/assets/84276199/739d2557-1dec-4960-bb1d-455bc8f55f5e)
+![saa-03-005-diagram](https://github.com/awstut-an-r/awstut-fa/assets/84276199/aa111f81-96d5-490d-9cc9-e54534015462)
 
 # Requirements
 
@@ -15,7 +15,7 @@ https://awstut.com/en/2023/11/25/elastic-beanstalk-deployment-policy-rolling-wit
 
 ## Tempalte File Modification
 
-Modify the following locations in dva-01-003.yaml.
+Modify the following locations in saa-03-005.yaml.
 
 ```yaml
 Parameters:
@@ -27,14 +27,14 @@ Parameters:
 ## Upload  Template Files to S3 Bucket
 
 ```bash
-aws s3 cp . s3://my-bucket/dva-01-003/ --recursive
+aws s3 cp . s3://my-bucket/saa-03-005/ --recursive
 ```
 
 ## CloudFormation Stack Creation
 
 ```bash
 aws cloudformation create-stack \
---stack-name dva-01-003 \
---template-url https://my-bucket.s3.ap-northeast-1.amazonaws.com/dva-01-003/dva-01-003.yaml \
+--stack-name saa-03-005 \
+--template-url https://my-bucket.s3.ap-northeast-1.amazonaws.com/saa-03-005/saa-03-005.yaml \
 --capabilities CAPABILITY_IAM
 ```
