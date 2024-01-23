@@ -5,17 +5,57 @@ Parameters:
     Type: String
     Default: [bucket-name]
     
+  Prefix:
+    Type: String
+    Default: saa-01-001
+    
+  ALBHostedZoneId:
+    Type: String
+    Default: Z14GRHDCWA56QT
+    
   DomainName:
     Type: String
-    Default: example.com
+    Default: [domain-name]
+    
+  HealthCheckFailureThreshold:
+    Type: Number
+    Default: 3
+    
+  HealthCheckRequestInterval:
+    Type: Number
+    Default: 30
     
   HTTPPort:
     Type: Number
     Default: 80
     
-  Prefix:
+  ImageId:
     Type: String
-    Default: saa-01-001
+    Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-arm64
+    
+  InstanceType:
+    Type: String
+    Default: t4g.nano
+    
+  LambdaHandler:
+    Type: String
+    Default: index.lambda_handler
+    
+  LambdaRuntime:
+    Type: String
+    Default: python3.8
+    
+  S3DnsName:
+    Type: String
+    Default: s3-website-ap-northeast-1.amazonaws.com
+    
+  S3IndexDocument:
+    Type: String
+    Default: index.html
+    
+  S3HostedZoneId:
+    Type: String
+    Default: Z2M4EHUR26P7ZW
     
 
 Resources:
@@ -42,39 +82,26 @@ Resources:
     Properties:
       TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-endpoint.yaml"
       Parameters:
-        EndpointSecurityGroup: !GetAtt VPCStack.Outputs.EndpointSecurityGroup
-        Prefix: !Ref Prefix
         PrivateRouteTable: !GetAtt VPCStack.Outputs.PrivateRouteTable
-        PrivateSubnet1: !GetAtt VPCStack.Outputs.PrivateSubnet1
-        PrivateSubnet2: !GetAtt VPCStack.Outputs.PrivateSubnet2
         VPC: !GetAtt VPCStack.Outputs.VPC
         
   EC2Stack:
     Type: AWS::CloudFormation::Stack
     DependsOn:
-      - VPCStack
       - EndpointStack
     Properties:
       TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-ec2.yaml"
       Parameters:
-        ImageId: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-arm64-gp2
+        ImageId: !Ref ImageId
         InstanceSecurityGroup: !GetAtt VPCStack.Outputs.InstanceSecurityGroup
-        InstanceType: t4g.nano
+        InstanceType: !Ref InstanceType
         Prefix: !Ref Prefix
         PrivateSubnet1: !GetAtt VPCStack.Outputs.PrivateSubnet1
         PrivateSubnet2: !GetAtt VPCStack.Outputs.PrivateSubnet2
-        UserData: !Base64 |
-          #!/bin/bash -xe
-          yum update -y
-          yum install -y httpd
-          systemctl start httpd
-          systemctl enable httpd
-          ec2-metadata -i > /var/www/html/index.html
           
   ALBStack:
     Type: AWS::CloudFormation::Stack
     DependsOn:
-      - VPCStack
       - EC2Stack
     Properties:
       TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-alb.yaml"
@@ -100,7 +127,10 @@ Resources:
       TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-s3.yaml"
       Parameters:
         DomainName: !Ref DomainName
+        Handler: !Ref LambdaHandler
+        IndexDocument: !Ref S3IndexDocument
         Prefix: !Ref Prefix
+        Runtime: !Ref LambdaRuntime
         
   Route53Stack:
     Type: AWS::CloudFormation::Stack
@@ -111,11 +141,10 @@ Resources:
       TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-route53.yaml"
       Parameters:
         ALBDnsName: !GetAtt ALBStack.Outputs.ALBDnsName
-        ALBHostedZoneId: Z14GRHDCWA56QT
+        ALBHostedZoneId: !Ref ALBHostedZoneId
         DomainName: !Ref DomainName
-        FailureThreshold: 3
+        FailureThreshold: !Ref HealthCheckFailureThreshold
         HTTPPort: !Ref HTTPPort
-        Prefix: !Ref Prefix
-        RequestInterval: 30
-        S3DnsName: s3-website-ap-northeast-1.amazonaws.com
-        S3HostedZoneId: Z2M4EHUR26P7ZW
+        RequestInterval: !Ref HealthCheckRequestInterval
+        S3DnsName: !Ref S3DnsName
+        S3HostedZoneId: !Ref S3HostedZoneId
