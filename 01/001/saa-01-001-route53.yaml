@@ -19,9 +19,6 @@ Parameters:
   HTTPPort:
     Type: Number
     
-  Prefix:
-    Type: String
-    
   S3DnsName:
     Type: String
     
