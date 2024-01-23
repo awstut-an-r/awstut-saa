@@ -64,7 +64,6 @@ Resources:
           index_document = os.environ['INDEX_DOCUMENT']
           prefix = os.environ['PREFIX']
           
-          #object_name = 'index.html'
           object_body = """<html>
             <head>{prefix}</head>
             <body>
