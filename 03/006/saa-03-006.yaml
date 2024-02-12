@@ -60,9 +60,6 @@ Resources:
     Properties:
       TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-waf.yaml"
       Parameters:
-        #ALBArn: !GetAtt ALBStack.Outputs.ALBArn
-        #ManagedRuleName: AWSManagedRulesAmazonIpReputationList
-        #ManagedRuleVendor: AWS
         Prefix: !Ref Prefix
         RestApi: !GetAtt ApiGatewayStack.Outputs.RestApi
         Stage2: !GetAtt ApiGatewayStack.Outputs.Stage2
