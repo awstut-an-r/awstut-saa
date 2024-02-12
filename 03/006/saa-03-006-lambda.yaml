@@ -45,7 +45,6 @@ Resources:
             return {
               'statusCode': 200,
               'headers': {'Content-Type': 'text/html'},
-              #'body': json.dumps('Hello form Awstut !')
               'body': html.format(id=ID, query=query)
             }
       Environment:
