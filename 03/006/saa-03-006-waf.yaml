@@ -1,0 +1,108 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  #ALBArn:
+  #  Type: String
+    
+  #ManagedRuleName:
+  #  Type: String
+  #  
+  #ManagedRuleVendor:
+  #  Type: String
+
+  Prefix:
+    Type: String
+    
+  RestApi:
+    Type: String
+    
+  Stage2:
+    Type: String
+    
+    
+Resources:
+  RuleGroup:
+    Type: AWS::WAFv2::RuleGroup
+    Properties:
+      Capacity: 90
+      #Name: !Sub "${Prefix}-GeoRestrictionRuleGroup"
+      Name: !Sub "${Prefix}-XssRuleGroup"
+      Rules:
+        - Action:
+            Block: {}
+          Name: !Sub "${Prefix}-XssRule"
+          Priority: 0
+          Statement:
+            #GeoMatchStatement:
+            #  CountryCodes:
+            #    - JP
+            XssMatchStatement:
+              FieldToMatch: 
+                #AllQueryArguments: Json
+                #Body: 
+                #  Body
+                #Cookies: 
+                #  Cookies
+                #Headers: 
+                #  Headers
+                #JsonBody: 
+                #  JsonBody
+                #Method: Json
+                QueryString: {}
+                #SingleHeader: 
+                #  SingleHeader
+                #SingleQueryArgument: 
+                #  SingleQueryArgument
+                #UriPath: Json
+              TextTransformations: 
+                - Priority: 0
+                  Type: NONE
+                - Priority: 1
+                  Type: LOWERCASE
+                - Priority: 2
+                  Type: HTML_ENTITY_DECODE
+                - Priority: 3
+                  Type: COMPRESS_WHITE_SPACE
+                - Priority: 4
+                  Type: CMD_LINE
+                - Priority: 5
+                  Type: URL_DECODE
+          VisibilityConfig:
+            CloudWatchMetricsEnabled: true
+            MetricName: !Sub "${Prefix}-XssRule"
+            SampledRequestsEnabled: false
+      Scope: REGIONAL
+      VisibilityConfig:
+        CloudWatchMetricsEnabled: true
+        MetricName: !Sub "${Prefix}-XssRuleGroup"
+        SampledRequestsEnabled: false
+
+  WebACL:
+    Type: AWS::WAFv2::WebACL
+    Properties:
+      DefaultAction:
+        Allow: {}
+      Name: !Sub "${Prefix}-WebACL"
+      Rules:
+        - Name: !Sub "${Prefix}-WebACL-Xss"
+          OverrideAction:
+            None: {}
+          Priority: 0
+          Statement:
+            RuleGroupReferenceStatement:
+              Arn: !GetAtt RuleGroup.Arn
+          VisibilityConfig:
+            CloudWatchMetricsEnabled: true
+            MetricName: !Sub "${Prefix}-WebACL-Xss"
+            SampledRequestsEnabled: false
+      Scope: REGIONAL
+      VisibilityConfig:
+        CloudWatchMetricsEnabled: true
+        MetricName: !Ref Prefix
+        SampledRequestsEnabled: false
+        
+  WebACLAssociation:
+    Type: AWS::WAFv2::WebACLAssociation
+    Properties: 
+      ResourceArn: !Sub "arn:aws:apigateway:${AWS::Region}::/restapis/${RestApi}/stages/${Stage2}"
+      WebACLArn: !GetAtt WebACL.Arn

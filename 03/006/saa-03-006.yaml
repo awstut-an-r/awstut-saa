@@ -1,0 +1,68 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  TemplateBucketName:
+    Type: String
+    Default: awstut-bucket
+    
+  Prefix:
+    Type: String
+    Default: saa-03-006
+    
+  LambdaArchitecture:
+    Type: String
+    Default: arm64
+    
+  LambdaHandler:
+    Type: String
+    Default: index.lambda_handler
+    
+  LambdaRuntime:
+    Type: String
+    Default: python3.12
+    
+  StageName1:
+    Type: String
+    Default: stage1
+    
+  StageName2:
+    Type: String
+    Default: stage2
+
+
+Resources:
+  LambdaStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-lambda.yaml"
+      Parameters:
+        Architecture: !Ref LambdaArchitecture
+        Handler: !Ref LambdaHandler
+        Prefix: !Ref Prefix
+        Runtime: !Ref LambdaRuntime
+        
+  ApiGatewayStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn:
+      - LambdaStack
+    Properties:
+      TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-apigateway.yaml"
+      Parameters:
+        FunctionArn: !GetAtt LambdaStack.Outputs.FunctionArn
+        Prefix: !Ref Prefix
+        StageName1: !Ref StageName1
+        StageName2: !Ref StageName2
+
+  WAFStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn:
+      - ApiGatewayStack
+    Properties:
+      TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-waf.yaml"
+      Parameters:
+        #ALBArn: !GetAtt ALBStack.Outputs.ALBArn
+        #ManagedRuleName: AWSManagedRulesAmazonIpReputationList
+        #ManagedRuleVendor: AWS
+        Prefix: !Ref Prefix
+        RestApi: !GetAtt ApiGatewayStack.Outputs.RestApi
+        Stage2: !GetAtt ApiGatewayStack.Outputs.Stage2

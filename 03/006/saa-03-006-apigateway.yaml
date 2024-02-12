@@ -1,0 +1,149 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  FunctionArn:
+    Type: String
+    
+  Prefix:
+    Type: String
+    
+  StageName1:
+    Type: String
+    
+  StageName2:
+    Type: String
+    
+
+Resources:
+  RestApi:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      EndpointConfiguration:
+        Types:
+          - EDGE
+      Name: !Ref Prefix
+      
+  Deployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn:
+      - Method
+    Properties:
+      RestApiId: !Ref RestApi
+      #StageName: 
+      
+  Resource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !GetAtt RestApi.RootResourceId
+      PathPart: !Sub "${Prefix}-resource"
+      RestApiId: !Ref RestApi
+      
+  Stage1:
+    Type: AWS::ApiGateway::Stage
+    Properties:
+      DeploymentId: !Ref Deployment
+      #MethodSettings:
+      RestApiId: !Ref RestApi
+      #StageName: !Ref StageName1
+      StageName: !Sub "${Prefix}-${StageName1}"
+      
+  Stage2:
+    Type: AWS::ApiGateway::Stage
+    Properties:
+      DeploymentId: !Ref Deployment
+      #MethodSettings:
+      RestApiId: !Ref RestApi
+      #StageName: !Ref StageName2
+      StageName: !Sub "${Prefix}-${StageName2}"
+      
+  Method:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      HttpMethod: GET
+      Integration:
+        ConnectionType: INTERNET
+        #ContentHandling: CONVERT_TO_TEXT
+        Credentials: !GetAtt ApiGatewayRole.Arn
+        IntegrationHttpMethod: POST
+        #IntegrationResponses:
+        #PassthroughBehavior:
+        Type: AWS_PROXY
+        Uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${FunctionArn}/invocations"
+      ResourceId: !Ref Resource
+      RestApiId: !Ref RestApi
+      
+
+
+  #HttpApi:
+  #  Type: AWS::ApiGatewayV2::Api
+  #  Properties:
+  #    Name: !Sub ${Prefix}-HttpApi
+  #    Description: HttpApi.
+  #    ProtocolType: HTTP
+#
+  #Stage:
+  #  Type: AWS::ApiGatewayV2::Stage
+  #  Properties:
+  #    ApiId: !Ref HttpApi
+  #    AutoDeploy: true
+  #    StageName: $default
+  #    
+  #Integration:
+  #  Type: AWS::ApiGatewayV2::Integration
+  #  Properties:
+  #    ApiId: !Ref HttpApi
+  #    ConnectionType: INTERNET
+  #    CredentialsArn: !GetAtt ApiGatewayRole.Arn
+  #    IntegrationMethod: POST
+  #    IntegrationType: AWS_PROXY
+  #    IntegrationUri: !Ref FunctionArn
+  #    PayloadFormatVersion: '2.0'
+  #    
+  #Route:
+  #  Type: AWS::ApiGatewayV2::Route
+  #  Properties:
+  #    ApiId: !Ref HttpApi
+  #    RouteKey: 'GET /'
+  #    Target: !Sub "integrations/${Integration}"
+          
+  #Permission:
+  #  Type: AWS::Lambda::Permission
+  #  Properties:
+  #    FunctionName: !Ref FunctionName
+  #    Action: lambda:InvokeFunction
+  #    Principal: apigateway.amazonaws.com
+  
+  ApiGatewayRole:
+    Type: AWS::IAM::Role
+    DeletionPolicy: Delete
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Principal:
+              Service:
+                - apigateway.amazonaws.com
+      Policies:
+        - PolicyName: !Sub "${Prefix}-InvokeFunctionPolicy"
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                Resource:
+                  - !Ref FunctionArn
+                  
+                  
+Outputs:
+  RestApi:
+    Value: !Ref RestApi
+    
+  Stage1:
+    Value: !Ref Stage1
+    
+  Stage2:
+    Value: !Ref Stage2
