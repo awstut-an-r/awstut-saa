@@ -1,15 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 
 Parameters:
-  #ALBArn:
-  #  Type: String
-    
-  #ManagedRuleName:
-  #  Type: String
-  #  
-  #ManagedRuleVendor:
-  #  Type: String
-
   Prefix:
     Type: String
     
@@ -25,7 +16,6 @@ Resources:
     Type: AWS::WAFv2::RuleGroup
     Properties:
       Capacity: 90
-      #Name: !Sub "${Prefix}-GeoRestrictionRuleGroup"
       Name: !Sub "${Prefix}-XssRuleGroup"
       Rules:
         - Action:
@@ -33,27 +23,9 @@ Resources:
           Name: !Sub "${Prefix}-XssRule"
           Priority: 0
           Statement:
-            #GeoMatchStatement:
-            #  CountryCodes:
-            #    - JP
             XssMatchStatement:
               FieldToMatch: 
-                #AllQueryArguments: Json
-                #Body: 
-                #  Body
-                #Cookies: 
-                #  Cookies
-                #Headers: 
-                #  Headers
-                #JsonBody: 
-                #  JsonBody
-                #Method: Json
                 QueryString: {}
-                #SingleHeader: 
-                #  SingleHeader
-                #SingleQueryArgument: 
-                #  SingleQueryArgument
-                #UriPath: Json
               TextTransformations: 
                 - Priority: 0
                   Type: NONE
