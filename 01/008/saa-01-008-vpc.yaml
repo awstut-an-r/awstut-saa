@@ -15,10 +15,7 @@ Parameters:
     
   CidrIp3:
     Type: String
-    
-  #HTTPSPort:
-  #  Type: Number
-    
+
   MySQLPort:
     Type: Number
     
@@ -62,12 +59,7 @@ Resources:
       GroupName: !Sub "${Prefix}-FunctionSecurityGroup"
       GroupDescription: Allow HTTPS.
       VpcId: !Ref VPC
-      #SecurityGroupIngress:
-      #  - IpProtocol: tcp
-      #    FromPort: !Ref HTTPSPort
-      #    ToPort: !Ref HTTPSPort
-      #    CidrIp: 0.0.0.0/0
-          
+
   DBProxySecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -105,10 +97,7 @@ Outputs:
       
   DBSubnet2:
     Value: !Ref DBSubnet2
-  
-  #AZ1:
-  #  Value: !Ref AZ1
-      
+
   FunctionSecurityGroup:
     Value: !Ref FunctionSecurityGroup
   
