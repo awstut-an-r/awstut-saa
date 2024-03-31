@@ -48,11 +48,7 @@ Parameters:
   DBProxyEngineFamily:
     Type: String
     Default: MYSQL
-    
-  #DBTableName:
-  #  Type: String
-  #  Default: testtable
-    
+
   LambdaArchitecture:
     Type: String
     Default: arm64
@@ -67,7 +63,6 @@ Parameters:
     
   LayerPackage:
     Type: String
-    #Default: deploy.zip
     Default: layer.zip
     
   LambdaRuntime:
@@ -85,19 +80,7 @@ Parameters:
   SQSBatchSize:
     Type: Number
     Default: 1
-    
-  #SQSMaximumBatchingWindowInSeconds:
-  #  Type: Number
-  #  Default: 10
-  #  
-  #SQSReceiveMessageWaitTimeSeconds:
-  #  Type: Number
-  #  Default: 20
-  #  
-  #SQSVisibilityTimeout:
-  #  Type: Number
-  #  Default: 90
-    
+
 
 Resources:
   VPCStack:
@@ -110,7 +93,6 @@ Resources:
         CidrIp1: 10.0.1.0/24
         CidrIp2: 10.0.2.0/24
         CidrIp3: 10.0.3.0/24
-        #HTTPSPort: !Ref HTTPSPort
         MySQLPort: !Ref MySQLPort
         Prefix: !Ref Prefix
         VPCCidrBlock: 10.0.0.0/16
@@ -127,7 +109,6 @@ Resources:
         DBEngine: !Ref DBEngine
         DBEngineVersion: !Ref DBEngineVersion
         DBInstanceClass: !Ref DBInstanceClass
-        #DBInstanceIdentifier: !Sub "${Prefix}-dbinstance"
         DBName: !Ref DBName
         DBMasterUsername: !Ref DBMasterUsername
         DBMasterUserPassword: !Ref DBMasterUserPassword
@@ -144,8 +125,6 @@ Resources:
       TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-sqs.yaml"
       Parameters:
         Prefix: !Ref Prefix
-        #ReceiveMessageWaitTimeSeconds: !Ref SQSReceiveMessageWaitTimeSeconds
-        #VisibilityTimeout: !Ref SQSVisibilityTimeout
         
   LambdaStack1:
     Type: AWS::CloudFormation::Stack
@@ -156,19 +135,11 @@ Resources:
       Parameters:
         Architecture: !Ref LambdaArchitecture
         Handler: !Ref LambdaHandler
-        #LambdaRoleArn: !GetAtt LambdaRoleStack.Outputs.LambdaRoleArn
-        #MemorySize: !Ref MemorySize
-        #PackageType: Zip
         Prefix: !Ref Prefix
         QueueArn: !GetAtt SQSStack.Outputs.QueueArn
-        #QueueName: !GetAtt SQSStack.Outputs.QueueName
         QueueUrl: !GetAtt SQSStack.Outputs.QueueUrl
         Runtime: !Ref LambdaRuntime
-        #S3Bucket:
-        #  Fn::ImportValue: !Sub "${Prefix}-S3Bucket"
-        #S3Key: deploy_package.zip
-        #SSMParameter: !GetAtt SSMStack.Outputs.SSMParameter
-        
+
   LambdaStack2:
     Type: AWS::CloudFormation::Stack
     DependsOn:
@@ -180,17 +151,8 @@ Resources:
         EphemeralStorageSize: !Ref LambdaEphemeralStorageSize
         Handler: !Ref LambdaHandler
         LayerPackage: !Ref LayerPackage
-        #LayerS3Key: !Sub "${Prefix}/${LayerPackage}"
-        #LambdaRoleArn: !GetAtt LambdaRoleStack.Outputs.LambdaRoleArn
-        #MemorySize: !Ref MemorySize
-        #PackageType: Zip
         Prefix: !Ref Prefix
-        #QueueArn: !GetAtt SQSStack.Outputs.QueueArn
-        #QueueName: !GetAtt SQSStack.Outputs.QueueName
-        #QueueUrl: !GetAtt SQSStack.Outputs.QueueUrl
         Runtime: !Ref LambdaRuntime
-        #S3Key: deploy_package.zip
-        #SSMParameter: !GetAtt SSMStack.Outputs.SSMParameter
         Timeout: !Ref LambdaTimeout
         
   LambdaStack3:
@@ -209,19 +171,10 @@ Resources:
         DBMasterUserPassword: !Ref DBMasterUserPassword
         DBName: !Ref DBName
         DBProxyEndpointAddress: !GetAtt RDSStack.Outputs.DBProxyEndpointAddress
-        #DBTableName: !Ref DBTableName
         FunctionSecurityGroup: !GetAtt VPCStack.Outputs.FunctionSecurityGroup
         FunctionSubnet: !GetAtt VPCStack.Outputs.FunctionSubnet
         Handler: !Ref LambdaHandler
         LambdaLayer: !GetAtt LambdaStack2.Outputs.LambdaLayer
-        #LambdaRoleArn: !GetAtt LambdaRoleStack.Outputs.LambdaRoleArn
-        #MaximumBatchingWindowInSeconds: !Ref SQSMaximumBatchingWindowInSeconds
-        #MaxNumberOfMessages: !Ref MaxNumberOfMessages
-        #MemorySize: !Ref MemorySize
-        #PackageType: Zip
         Prefix: !Ref Prefix
         QueueArn: !GetAtt SQSStack.Outputs.QueueArn
-        #QueueName: !GetAtt SQSStack.Outputs.QueueName
-        #QueueUrl: !GetAtt SQSStack.Outputs.QueueUrl
         Runtime: !Ref LambdaRuntime
-        #Timeout: !Ref Timeout
