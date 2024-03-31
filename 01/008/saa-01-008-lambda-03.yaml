@@ -21,10 +21,7 @@ Parameters:
     
   DBProxyEndpointAddress:
     Type: String
-    
-  #DBTableName:
-  #  Type: String
-    
+
   FunctionSecurityGroup:
     Type: String
     
@@ -36,34 +33,16 @@ Parameters:
     
   LambdaLayer:
     Type: String
-    
-  #MaxNumberOfMessages:
-  #  Type: Number
-  
-  #MaximumBatchingWindowInSeconds:
-  #  Type: Number
-    
-  #MemorySize:
-  #  Type: Number
-    
+
   Prefix:
     Type: String
     
   QueueArn:
     Type: String
-    
-  #QueueName:
-  #  Type: String
-  
-  #QueueUrl:
-  #  Type: String
-    
+
   Runtime:
     Type: String
-    
-  #Timeout:
-  #  Type: Number
-    
+
     
 Resources:
   Function3:
@@ -84,7 +63,6 @@ Resources:
           rds_proxy_host = os.environ['DB_PROXY_ENDPOINT_ADDRESS']
           port = int(os.environ['DB_ENDPOINT_PORT'])
           db_name = os.environ['DB_NAME']
-          #table = os.environ['DB_TABLENAME']
           region = os.environ['REGION']
           
           logger = logging.getLogger()
@@ -107,8 +85,6 @@ Resources:
           logger.info("SUCCESS: Connection to RDS for MySQL instance succeeded")
           
           def lambda_handler(event, context):
-            #print(event)
-            
             message = event['Records'][0]['body']
             data = json.loads(message)
             CustID = data['CustID']
@@ -135,19 +111,14 @@ Resources:
           DB_NAME: !Ref DBName
           DB_PASSWORD: !Ref DBMasterUserPassword
           DB_PROXY_ENDPOINT_ADDRESS: !Ref DBProxyEndpointAddress
-          #DB_TABLENAME: !Ref DBTableName
           DB_USER: !Ref DBMasterUsername
           REGION: !Ref AWS::Region
       FunctionName: !Sub "${Prefix}-function-03"
       Handler: !Ref Handler
       Layers:
         - !Ref LambdaLayer
-      #MemorySize: !Ref MemorySize
-      #PackageType: Zip
       Runtime: !Ref Runtime
-      #Runtime: python3.8
       Role: !GetAtt LambdaRole3.Arn
-      #Timeout: !Ref Timeout
       VpcConfig:
         SecurityGroupIds:
           - !Ref FunctionSecurityGroup
@@ -173,46 +144,18 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
-                  #- sqs:GetQueueUrl
                   - sqs:ReceiveMessage
                   - sqs:DeleteMessage
                   - sqs:GetQueueAttributes
                 Resource:
                   - !Ref QueueArn
       ManagedPolicyArns:
-        #- arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
 
   EventSourceMapping:
     Type: AWS::Lambda::EventSourceMapping
     Properties: 
-      #AmazonManagedKafkaEventSourceConfig: 
-      #  AmazonManagedKafkaEventSourceConfig
       BatchSize: !Ref BatchSize
-      #BisectBatchOnFunctionError: Boolean
-      #DestinationConfig: 
-      #  DestinationConfig
       Enabled: true
       EventSourceArn: !Ref QueueArn
-      #FilterCriteria: 
-      #  FilterCriteria
       FunctionName: !Ref Function3
-      #FunctionResponseTypes: 
-      #  - String
-      #MaximumBatchingWindowInSeconds: !Ref MaximumBatchingWindowInSeconds
-      #MaximumRecordAgeInSeconds: Integer
-      #MaximumRetryAttempts: Integer
-      #ParallelizationFactor: Integer
-      #Queues: 
-      #  - String
-      #SelfManagedEventSource: 
-      #  SelfManagedEventSource
-      #SelfManagedKafkaEventSourceConfig: 
-      #  SelfManagedKafkaEventSourceConfig
-      #SourceAccessConfigurations: 
-      #  - SourceAccessConfiguration
-      #StartingPosition: String
-      #StartingPositionTimestamp: Double
-      #Topics: 
-      #  - String
-      #TumblingWindowInSeconds: Integer
