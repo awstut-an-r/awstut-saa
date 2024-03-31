@@ -6,19 +6,13 @@ Parameters:
     
   Handler:
     Type: String
-    
-  #MemorySize:
-  #  Type: Number
-    
+
   Prefix:
     Type: String
     
   QueueArn:
     Type: String
-    
-  #QueueName:
-  #  Type: String
-  
+
   QueueUrl:
     Type: String
     
@@ -38,8 +32,7 @@ Resources:
           import datetime
           import json
           import os
-          #import random
-          
+
           queue_url = os.environ['QUEUE_URL']
           region = os.environ['REGION']
           
@@ -47,48 +40,11 @@ Resources:
           
           def lambda_handler(event, context):
             message = lambda id: json.dumps({'CustID': id, 'Name': str(id)*2})  
-          
-            #entries = [{'Id': datetime.datetime.now().strftime('%Y%m%d%H%M%S%f'), 'MessageBody': str(i)} for i in range(10)]
             entries = [{'Id': datetime.datetime.now().strftime('%Y%m%d%H%M%S%f'), 'MessageBody': message(i)} for i in range(10)]
           
             response = sqs_client.send_message_batch(
               QueueUrl=queue_url,
               Entries=entries
-              #Entries=[
-              #  {
-              #    'Id': 'string',
-              #    'MessageBody': 'string',
-              #    'DelaySeconds': 123,
-              #    'MessageAttributes': {
-              #      'string': {
-              #        'StringValue': 'string',
-              #        'BinaryValue': b'bytes',
-              #        'StringListValues': [
-              #          'string',
-              #        ],
-              #        'BinaryListValues': [
-              #          b'bytes',
-              #        ],
-              #        'DataType': 'string'
-              #      }
-              #    },
-              #    'MessageSystemAttributes': {
-              #      'string': {
-              #        'StringValue': 'string',
-              #        'BinaryValue': b'bytes',
-              #        'StringListValues': [
-              #          'string',
-              #        ],
-              #        'BinaryListValues': [
-              #          b'bytes',
-              #        ],
-              #        'DataType': 'string'
-              #      }
-              #    },
-              #    'MessageDeduplicationId': 'string',
-              #    'MessageGroupId': 'string'
-              #  },
-              #]
             )
             
             return response
@@ -98,10 +54,7 @@ Resources:
           REGION: !Ref AWS::Region
       FunctionName: !Sub "${Prefix}-function-01"
       Handler: !Ref Handler
-      #MemorySize: !Ref MemorySize
-      #PackageType: Zip
       Runtime: !Ref Runtime
-      #Runtime: python3.8
       Role: !GetAtt LambdaRole1.Arn
 
   LambdaRole1:
@@ -123,7 +76,6 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
-                  #- sqs:GetQueueUrl
                   - sqs:SendMessage
                 Resource:
                   - !Ref QueueArn
