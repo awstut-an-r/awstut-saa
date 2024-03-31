@@ -57,7 +57,7 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupName: !Sub "${Prefix}-FunctionSecurityGroup"
-      GroupDescription: Allow HTTPS.
+      GroupDescription: Deny All.
       VpcId: !Ref VPC
 
   DBProxySecurityGroup:
