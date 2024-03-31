@@ -1,0 +1,227 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  TemplateBucketName:
+    Type: String
+    Default: awstut-bucket
+    
+  Prefix:
+    Type: String
+    Default: saa-01-008
+    
+  AvailabilityZone1:
+    Type: String
+    Default: a
+    
+  AvailabilityZone2:
+    Type: String
+    Default: c
+    
+  DBAllocatedStorage:
+    Type: Number
+    Default: 20
+    
+  DBEngine:
+    Type: String
+    Default: mysql
+    
+  DBEngineVersion:
+    Type: String
+    Default: 8.0.36
+    
+  DBInstanceClass:
+    Type: String
+    Default: db.t4g.micro
+    
+  DBMasterUsername:
+    Type: String
+    Default: testdb
+    
+  DBMasterUserPassword:
+    Type: String
+    Default: Passw0rd
+    
+  DBName:
+    Type: String
+    Default: testdb
+    
+  DBProxyEngineFamily:
+    Type: String
+    Default: MYSQL
+    
+  #DBTableName:
+  #  Type: String
+  #  Default: testtable
+    
+  LambdaArchitecture:
+    Type: String
+    Default: arm64
+    
+  LambdaEphemeralStorageSize:
+    Type: Number
+    Default: 512
+    
+  LambdaHandler:
+    Type: String
+    Default: index.lambda_handler
+    
+  LayerPackage:
+    Type: String
+    #Default: deploy.zip
+    Default: layer.zip
+    
+  LambdaRuntime:
+    Type: String
+    Default: python3.12
+    
+  LambdaTimeout:
+    Type: Number
+    Default: 300
+    
+  MySQLPort:
+    Type: Number
+    Default: 3306
+  
+  SQSBatchSize:
+    Type: Number
+    Default: 1
+    
+  #SQSMaximumBatchingWindowInSeconds:
+  #  Type: Number
+  #  Default: 10
+  #  
+  #SQSReceiveMessageWaitTimeSeconds:
+  #  Type: Number
+  #  Default: 20
+  #  
+  #SQSVisibilityTimeout:
+  #  Type: Number
+  #  Default: 90
+    
+
+Resources:
+  VPCStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-vpc.yaml"
+      Parameters:
+        AvailabilityZone1: !Ref AvailabilityZone1
+        AvailabilityZone2: !Ref AvailabilityZone2
+        CidrIp1: 10.0.1.0/24
+        CidrIp2: 10.0.2.0/24
+        CidrIp3: 10.0.3.0/24
+        #HTTPSPort: !Ref HTTPSPort
+        MySQLPort: !Ref MySQLPort
+        Prefix: !Ref Prefix
+        VPCCidrBlock: 10.0.0.0/16
+        
+  RDSStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn:
+      - VPCStack
+    Properties:
+      TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-rds.yaml"
+      Parameters:
+        AvailabilityZone: !Ref AvailabilityZone1
+        DBAllocatedStorage: !Ref DBAllocatedStorage
+        DBEngine: !Ref DBEngine
+        DBEngineVersion: !Ref DBEngineVersion
+        DBInstanceClass: !Ref DBInstanceClass
+        #DBInstanceIdentifier: !Sub "${Prefix}-dbinstance"
+        DBName: !Ref DBName
+        DBMasterUsername: !Ref DBMasterUsername
+        DBMasterUserPassword: !Ref DBMasterUserPassword
+        DBSecurityGroup: !GetAtt VPCStack.Outputs.DBSecurityGroup
+        DBSubnet1: !GetAtt VPCStack.Outputs.DBSubnet1
+        DBSubnet2: !GetAtt VPCStack.Outputs.DBSubnet2
+        DBProxyEngineFamily: !Ref DBProxyEngineFamily
+        DBProxySecurityGroup: !GetAtt VPCStack.Outputs.DBProxySecurityGroup
+        Prefix: !Ref Prefix
+        
+  SQSStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-sqs.yaml"
+      Parameters:
+        Prefix: !Ref Prefix
+        #ReceiveMessageWaitTimeSeconds: !Ref SQSReceiveMessageWaitTimeSeconds
+        #VisibilityTimeout: !Ref SQSVisibilityTimeout
+        
+  LambdaStack1:
+    Type: AWS::CloudFormation::Stack
+    DependsOn:
+      - SQSStack
+    Properties:
+      TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-lambda-01.yaml"
+      Parameters:
+        Architecture: !Ref LambdaArchitecture
+        Handler: !Ref LambdaHandler
+        #LambdaRoleArn: !GetAtt LambdaRoleStack.Outputs.LambdaRoleArn
+        #MemorySize: !Ref MemorySize
+        #PackageType: Zip
+        Prefix: !Ref Prefix
+        QueueArn: !GetAtt SQSStack.Outputs.QueueArn
+        #QueueName: !GetAtt SQSStack.Outputs.QueueName
+        QueueUrl: !GetAtt SQSStack.Outputs.QueueUrl
+        Runtime: !Ref LambdaRuntime
+        #S3Bucket:
+        #  Fn::ImportValue: !Sub "${Prefix}-S3Bucket"
+        #S3Key: deploy_package.zip
+        #SSMParameter: !GetAtt SSMStack.Outputs.SSMParameter
+        
+  LambdaStack2:
+    Type: AWS::CloudFormation::Stack
+    DependsOn:
+      - SQSStack
+    Properties:
+      TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-lambda-02.yaml"
+      Parameters:
+        Architecture: !Ref LambdaArchitecture
+        EphemeralStorageSize: !Ref LambdaEphemeralStorageSize
+        Handler: !Ref LambdaHandler
+        LayerPackage: !Ref LayerPackage
+        #LayerS3Key: !Sub "${Prefix}/${LayerPackage}"
+        #LambdaRoleArn: !GetAtt LambdaRoleStack.Outputs.LambdaRoleArn
+        #MemorySize: !Ref MemorySize
+        #PackageType: Zip
+        Prefix: !Ref Prefix
+        #QueueArn: !GetAtt SQSStack.Outputs.QueueArn
+        #QueueName: !GetAtt SQSStack.Outputs.QueueName
+        #QueueUrl: !GetAtt SQSStack.Outputs.QueueUrl
+        Runtime: !Ref LambdaRuntime
+        #S3Key: deploy_package.zip
+        #SSMParameter: !GetAtt SSMStack.Outputs.SSMParameter
+        Timeout: !Ref LambdaTimeout
+        
+  LambdaStack3:
+    Type: AWS::CloudFormation::Stack
+    DependsOn:
+      - LambdaStack2
+      - RDSStack
+      - SQSStack
+    Properties:
+      TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-lambda-03.yaml"
+      Parameters:
+        Architecture: !Ref LambdaArchitecture
+        BatchSize: !Ref SQSBatchSize
+        DBEndpointPort: !Ref MySQLPort
+        DBMasterUsername: !Ref DBMasterUsername
+        DBMasterUserPassword: !Ref DBMasterUserPassword
+        DBName: !Ref DBName
+        DBProxyEndpointAddress: !GetAtt RDSStack.Outputs.DBProxyEndpointAddress
+        #DBTableName: !Ref DBTableName
+        FunctionSecurityGroup: !GetAtt VPCStack.Outputs.FunctionSecurityGroup
+        FunctionSubnet: !GetAtt VPCStack.Outputs.FunctionSubnet
+        Handler: !Ref LambdaHandler
+        LambdaLayer: !GetAtt LambdaStack2.Outputs.LambdaLayer
+        #LambdaRoleArn: !GetAtt LambdaRoleStack.Outputs.LambdaRoleArn
+        #MaximumBatchingWindowInSeconds: !Ref SQSMaximumBatchingWindowInSeconds
+        #MaxNumberOfMessages: !Ref MaxNumberOfMessages
+        #MemorySize: !Ref MemorySize
+        #PackageType: Zip
+        Prefix: !Ref Prefix
+        QueueArn: !GetAtt SQSStack.Outputs.QueueArn
+        #QueueName: !GetAtt SQSStack.Outputs.QueueName
+        #QueueUrl: !GetAtt SQSStack.Outputs.QueueUrl
+        Runtime: !Ref LambdaRuntime
+        #Timeout: !Ref Timeout

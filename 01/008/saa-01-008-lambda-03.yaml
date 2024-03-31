@@ -1,0 +1,218 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  Architecture:
+    Type: String
+  
+  BatchSize:
+    Type: Number
+    
+  DBEndpointPort:
+    Type: Number
+    
+  DBMasterUsername:
+    Type: String
+    
+  DBMasterUserPassword:
+    Type: String
+    
+  DBName:
+    Type: String
+    
+  DBProxyEndpointAddress:
+    Type: String
+    
+  #DBTableName:
+  #  Type: String
+    
+  FunctionSecurityGroup:
+    Type: String
+    
+  FunctionSubnet:
+    Type: String
+    
+  Handler:
+    Type: String
+    
+  LambdaLayer:
+    Type: String
+    
+  #MaxNumberOfMessages:
+  #  Type: Number
+  
+  #MaximumBatchingWindowInSeconds:
+  #  Type: Number
+    
+  #MemorySize:
+  #  Type: Number
+    
+  Prefix:
+    Type: String
+    
+  QueueArn:
+    Type: String
+    
+  #QueueName:
+  #  Type: String
+  
+  #QueueUrl:
+  #  Type: String
+    
+  Runtime:
+    Type: String
+    
+  #Timeout:
+  #  Type: Number
+    
+    
+Resources:
+  Function3:
+    Type: AWS::Lambda::Function
+    Properties:
+      Architectures:
+        - !Ref Architecture
+      Code:
+        ZipFile: |
+          import sys
+          import logging
+          import pymysql
+          import json
+          import os
+          
+          user_name = os.environ['DB_USER']
+          password = os.environ['DB_PASSWORD']
+          rds_proxy_host = os.environ['DB_PROXY_ENDPOINT_ADDRESS']
+          port = int(os.environ['DB_ENDPOINT_PORT'])
+          db_name = os.environ['DB_NAME']
+          #table = os.environ['DB_TABLENAME']
+          region = os.environ['REGION']
+          
+          logger = logging.getLogger()
+          logger.setLevel(logging.INFO)
+          
+          try:
+            conn = pymysql.connect(
+              host=rds_proxy_host,
+              port=port,
+              user=user_name,
+              passwd=password,
+              db=db_name,
+              connect_timeout=5
+            )
+          except pymysql.MySQLError as e:
+            logger.error("ERROR: Unexpected error: Could not connect to MySQL instance.")
+            logger.error(e)
+            sys.exit(1)
+           
+          logger.info("SUCCESS: Connection to RDS for MySQL instance succeeded")
+          
+          def lambda_handler(event, context):
+            #print(event)
+            
+            message = event['Records'][0]['body']
+            data = json.loads(message)
+            CustID = data['CustID']
+            Name = data['Name']
+        
+            item_count = 0
+            sql_string = f"insert into Customer (CustID, Name) values({CustID}, '{Name}')"
+        
+            with conn.cursor() as cur:
+              cur.execute("create table if not exists Customer ( CustID  int NOT NULL, Name varchar(255) NOT NULL, PRIMARY KEY (CustID))")
+              cur.execute(sql_string)
+              conn.commit()
+              cur.execute("select * from Customer")
+              logger.info("The following items have been added to the database:")
+              for row in cur:
+                item_count += 1
+                logger.info(row)
+            conn.commit()
+        
+            return "Added %d items to RDS for MySQL table" %(item_count)
+      Environment:
+        Variables:
+          DB_ENDPOINT_PORT: !Ref DBEndpointPort
+          DB_NAME: !Ref DBName
+          DB_PASSWORD: !Ref DBMasterUserPassword
+          DB_PROXY_ENDPOINT_ADDRESS: !Ref DBProxyEndpointAddress
+          #DB_TABLENAME: !Ref DBTableName
+          DB_USER: !Ref DBMasterUsername
+          REGION: !Ref AWS::Region
+      FunctionName: !Sub "${Prefix}-function-03"
+      Handler: !Ref Handler
+      Layers:
+        - !Ref LambdaLayer
+      #MemorySize: !Ref MemorySize
+      #PackageType: Zip
+      Runtime: !Ref Runtime
+      #Runtime: python3.8
+      Role: !GetAtt LambdaRole3.Arn
+      #Timeout: !Ref Timeout
+      VpcConfig:
+        SecurityGroupIds:
+          - !Ref FunctionSecurityGroup
+        SubnetIds:
+          - !Ref FunctionSubnet
+
+  LambdaRole3:
+    Type: AWS::IAM::Role
+    DeletionPolicy: Delete
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+      Policies:
+        - PolicyName: GetSSMParameter
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  #- sqs:GetQueueUrl
+                  - sqs:ReceiveMessage
+                  - sqs:DeleteMessage
+                  - sqs:GetQueueAttributes
+                Resource:
+                  - !Ref QueueArn
+      ManagedPolicyArns:
+        #- arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+
+  EventSourceMapping:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties: 
+      #AmazonManagedKafkaEventSourceConfig: 
+      #  AmazonManagedKafkaEventSourceConfig
+      BatchSize: !Ref BatchSize
+      #BisectBatchOnFunctionError: Boolean
+      #DestinationConfig: 
+      #  DestinationConfig
+      Enabled: true
+      EventSourceArn: !Ref QueueArn
+      #FilterCriteria: 
+      #  FilterCriteria
+      FunctionName: !Ref Function3
+      #FunctionResponseTypes: 
+      #  - String
+      #MaximumBatchingWindowInSeconds: !Ref MaximumBatchingWindowInSeconds
+      #MaximumRecordAgeInSeconds: Integer
+      #MaximumRetryAttempts: Integer
+      #ParallelizationFactor: Integer
+      #Queues: 
+      #  - String
+      #SelfManagedEventSource: 
+      #  SelfManagedEventSource
+      #SelfManagedKafkaEventSourceConfig: 
+      #  SelfManagedKafkaEventSourceConfig
+      #SourceAccessConfigurations: 
+      #  - SourceAccessConfiguration
+      #StartingPosition: String
+      #StartingPositionTimestamp: Double
+      #Topics: 
+      #  - String
+      #TumblingWindowInSeconds: Integer

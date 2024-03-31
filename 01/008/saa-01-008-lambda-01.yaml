@@ -1,0 +1,131 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  Architecture:
+    Type: String
+    
+  Handler:
+    Type: String
+    
+  #MemorySize:
+  #  Type: Number
+    
+  Prefix:
+    Type: String
+    
+  QueueArn:
+    Type: String
+    
+  #QueueName:
+  #  Type: String
+  
+  QueueUrl:
+    Type: String
+    
+  Runtime:
+    Type: String
+    
+    
+Resources:
+  Function1:
+    Type: AWS::Lambda::Function
+    Properties:
+      Architectures:
+        - !Ref Architecture
+      Code:
+        ZipFile: |
+          import boto3
+          import datetime
+          import json
+          import os
+          #import random
+          
+          queue_url = os.environ['QUEUE_URL']
+          region = os.environ['REGION']
+          
+          sqs_client = boto3.client('sqs', region_name=region)
+          
+          def lambda_handler(event, context):
+            message = lambda id: json.dumps({'CustID': id, 'Name': str(id)*2})  
+          
+            #entries = [{'Id': datetime.datetime.now().strftime('%Y%m%d%H%M%S%f'), 'MessageBody': str(i)} for i in range(10)]
+            entries = [{'Id': datetime.datetime.now().strftime('%Y%m%d%H%M%S%f'), 'MessageBody': message(i)} for i in range(10)]
+          
+            response = sqs_client.send_message_batch(
+              QueueUrl=queue_url,
+              Entries=entries
+              #Entries=[
+              #  {
+              #    'Id': 'string',
+              #    'MessageBody': 'string',
+              #    'DelaySeconds': 123,
+              #    'MessageAttributes': {
+              #      'string': {
+              #        'StringValue': 'string',
+              #        'BinaryValue': b'bytes',
+              #        'StringListValues': [
+              #          'string',
+              #        ],
+              #        'BinaryListValues': [
+              #          b'bytes',
+              #        ],
+              #        'DataType': 'string'
+              #      }
+              #    },
+              #    'MessageSystemAttributes': {
+              #      'string': {
+              #        'StringValue': 'string',
+              #        'BinaryValue': b'bytes',
+              #        'StringListValues': [
+              #          'string',
+              #        ],
+              #        'BinaryListValues': [
+              #          b'bytes',
+              #        ],
+              #        'DataType': 'string'
+              #      }
+              #    },
+              #    'MessageDeduplicationId': 'string',
+              #    'MessageGroupId': 'string'
+              #  },
+              #]
+            )
+            
+            return response
+      Environment:
+        Variables:
+          QUEUE_URL: !Ref QueueUrl
+          REGION: !Ref AWS::Region
+      FunctionName: !Sub "${Prefix}-function-01"
+      Handler: !Ref Handler
+      #MemorySize: !Ref MemorySize
+      #PackageType: Zip
+      Runtime: !Ref Runtime
+      #Runtime: python3.8
+      Role: !GetAtt LambdaRole1.Arn
+
+  LambdaRole1:
+    Type: AWS::IAM::Role
+    DeletionPolicy: Delete
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+      Policies:
+        - PolicyName: GetSSMParameter
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  #- sqs:GetQueueUrl
+                  - sqs:SendMessage
+                Resource:
+                  - !Ref QueueArn
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
