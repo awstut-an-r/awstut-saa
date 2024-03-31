@@ -15,10 +15,7 @@ Parameters:
     
   DBInstanceClass:
     Type: String
-  
-  #DBInstanceIdentifier:
-  #  Type: String
-    
+
   DBName:
     Type: String
     
@@ -81,7 +78,6 @@ Resources:
           AuthScheme: SECRETS
           SecretArn: !Ref Secret
       DBProxyName: !Sub "${Prefix}-dbproxy"
-      #DebugLogging: true
       EngineFamily: !Ref DBProxyEngineFamily
       IdleClientTimeout: 120
       RequireTLS: false
@@ -125,47 +121,15 @@ Resources:
                 Resource: !Ref Secret
               - Effect: Allow
                 Action: kms:Decrypt
-                Resource: '*' # use default key.
-              #- Effect: Allow
-              #  Action: kms:Decrypt
-              #  Resource: '*'
-              #- Effect: Allow
-              #  Action:
-              #    - secretsmanager:GetResourcePolicy
-              #    - secretsmanager:GetSecretValue
-              #    - secretsmanager:DescribeSecret
-              #    - secretsmanager:ListSecretVersionIds
-              #  Resource: !Ref SecretAttachment
+                Resource: "*"
         
   Secret:
     Type: AWS::SecretsManager::Secret
     Properties: 
       Name: !Sub "${Prefix}-Secret"
       SecretString: !Sub '{"username":"${DBMasterUsername}","password":"${DBMasterUserPassword}"}'
-      
-  #SecretAttachment:
-  #  Type: AWS::SecretsManager::SecretTargetAttachment
-  #  Properties:
-  #    SecretId: !Ref Secret
-  #    TargetId: !Ref DBInstance
-  #    TargetType: AWS::RDS::DBInstance
-      
+
 
 Outputs:
-  #DBEndpointAddress:
-  #  Value: !GetAtt DBInstance.Endpoint.Address
-  #    
-  #DBEndpointPort:
-  #  Value: !GetAtt DBInstance.Endpoint.Port
-  #    
-  #DBUser:
-  #  Value: !Ref DBMasterUsername
-  #
-  #DBPassword:
-  #  Value: !Ref DBMasterUserPassword
-  #    
-  #DBName:
-  #  Value: !Ref DBName
-      
   DBProxyEndpointAddress:
     Value: !GetAtt DBProxy.Endpoint
