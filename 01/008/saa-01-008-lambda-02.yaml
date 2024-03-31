@@ -4,9 +4,6 @@ Parameters:
   Architecture:
     Type: String
 
-  #CodeS3Bucket:
-  #  Type: String
-    
   EphemeralStorageSize:
     Type: Number
 
@@ -15,16 +12,10 @@ Parameters:
     
   LayerPackage:
     Type: String
-    
-  #LayerS3Key:
-  #  Type: String
-    
+
   Prefix:
     Type: String
-    
-  #RequirementsParameter:
-  #  Type: String
-    
+
   Runtime:
     Type: String
     
@@ -58,11 +49,9 @@ Resources:
         - !Ref Runtime
       Content:
         S3Bucket: !Ref Bucket
-        #S3Key: !Ref LayerS3Key
         S3Key: !Ref LayerPackage
       Description: !Ref Prefix
       LayerName: !Ref Prefix
-      #LicenseInfo: MIT
       
   CustomResource:
     Type: Custom::CustomResource
@@ -80,7 +69,6 @@ Resources:
           REGION: !Ref AWS::Region
           REQUIREMENTS_PARAMETER: !Ref RequirementsParameter
           S3_BUCKET: !Ref Bucket
-          #S3_BUCKET_FOLDER: !Ref Prefix
       Code:
         ZipFile: |
           import boto3
@@ -94,8 +82,7 @@ Resources:
           region = os.environ['REGION']
           requirements_parameter = os.environ['REQUIREMENTS_PARAMETER']
           s3_bucket = os.environ['S3_BUCKET']
-          #s3_bucket_folder = os.environ['S3_BUCKET_FOLDER']
-          
+
           CREATE = 'Create'
           response_data = {}
           
@@ -120,8 +107,7 @@ Resources:
                 ssm_client = boto3.client('ssm', region_name=region)
                 ssm_response = ssm_client.get_parameter(Name=requirements_parameter)
                 requirements = ssm_response['Parameter']['Value']
-                #print(requirements)
-                
+
                 with open(requirements_path, 'w') as file_data:
                   print(requirements, file=file_data)
                 
@@ -138,24 +124,7 @@ Resources:
                   Bucket=s3_bucket,
                   Key=layer_package
                 )
-                
-                #s3_client.put_object(
-                #  Body=iot_response['certificatePem'],
-                #  Bucket=bucket_name,
-                #  Key=s3_key.format(
-                #    folder=thing,
-                #    object=certificate_name
-                #  )
-                #)
-                
-                #s3_resource = boto3.resource('s3')
-                #bucket = s3_resource.Bucket(s3_bucket)
-                #
-                #bucket.upload_file(
-                #  layer_package_path,
-                #  '/'.join([s3_bucket_folder, layer_package])
-                #  )
-                  
+
               elif event['RequestType'] == 'Delete':
                 # delete objects in s3 bucket
                 list_response = s3_client.list_objects_v2(
@@ -179,17 +148,10 @@ Resources:
         Size: !Ref EphemeralStorageSize
       FunctionName: !Sub "${Prefix}-function-02"
       Handler: !Ref Handler
-      #Layers:
-      #  - !Ref LambdaLayer
       Runtime: !Ref Runtime
       Role: !GetAtt FunctionRole2.Arn
       Timeout: !Ref Timeout
-      #VpcConfig:
-      #  SecurityGroupIds:
-      #    - !Ref FunctionSecurityGroup
-      #  SubnetIds:
-      #    - !Ref FunctionSubnet
-      
+
   FunctionRole2:
     Type: AWS::IAM::Role
     Properties:
