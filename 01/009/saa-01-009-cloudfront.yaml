@@ -3,9 +3,6 @@ Parameters:
   BucketName:
     Type: String
 
-  #BucketWebsiteURL:
-  #  Type: String
-  
   BucketRegionalDomainName:
     Type: String
     
@@ -29,22 +26,13 @@ Conditions:
 Resources:
   OAC:
     Type: AWS::CloudFront::OriginAccessControl
-    #Condition: IsProd
     Properties: 
       OriginAccessControlConfig:
-        #Description: Access Control
-        #Name: !Ref Prefix
         Name: !Sub "${Prefix}-${Env}-oac"
         OriginAccessControlOriginType: s3
         SigningBehavior: always
         SigningProtocol: sigv4
 
-  #OAI:
-  #  Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
-  #  Properties:
-  #    CloudFrontOriginAccessIdentityConfig:
-  #      Comment: !Ref Prefix
-        
   Distribution:
     Type: AWS::CloudFront::Distribution
     Properties:
@@ -67,27 +55,14 @@ Resources:
             QueryString: false
           TargetOriginId: !Ref BucketName
           ViewerProtocolPolicy: allow-all
-          #DefaultTTL: !Ref CacheTTL
-          #MaxTTL: !Ref CacheTTL
-          #MinTTL: !Ref CacheTTL
         DefaultRootObject: index.html
         Enabled: true
         Origins:
           - DomainName: !Ref BucketRegionalDomainName
-            #DomainName: !Select
-            #  - 2
-            #  - !Split
-            #      - /
-            #      - !Ref BucketWebsiteURL
             Id: !Ref BucketName
             OriginAccessControlId: !GetAtt OAC.Id
             S3OriginConfig:
               OriginAccessIdentity: ""
-            #CustomOriginConfig:
-            #  OriginProtocolPolicy: http-only
-            #OriginCustomHeaders:
-            #  - HeaderName: Referer
-            #    HeaderValue: !Ref Prefix
         PriceClass: PriceClass_All
         Staging: !If
           - IsProd
@@ -100,16 +75,10 @@ Resources:
     Properties:
       ContinuousDeploymentPolicyConfig: 
         Enabled: true
-        #SingleHeaderPolicyConfig: 
-        #  SingleHeaderPolicyConfig
         SingleWeightPolicyConfig: 
-          #SessionStickinessConfig: 
-          #  SessionStickinessConfig
           Weight: .10
         StagingDistributionDnsNames: 
           - !Ref StagingDistributionDnsName
-        #TrafficConfig: 
-        #  TrafficConfig
         Type: SingleWeight
         
 Outputs:
@@ -118,6 +87,3 @@ Outputs:
     
   DistributionDomainName:
     Value: !GetAtt Distribution.DomainName
-
-  #OAI:
-  #  Value: !Ref OAI
