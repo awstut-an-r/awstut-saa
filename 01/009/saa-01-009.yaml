@@ -40,7 +40,6 @@ Resources:
     Properties:
       TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-s3-01.yaml"
       Parameters:
-        #BucketName: !Sub "${Prefix}-bucket-prod"
         Prefix: !Ref Prefix
         Env: !Ref EnvProd
         
@@ -49,7 +48,6 @@ Resources:
     Properties:
       TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-s3-01.yaml"
       Parameters:
-        #BucketName: !Sub "${Prefix}-bucket-stg"
         Env: !Ref EnvStg
         Prefix: !Ref Prefix
         
@@ -61,13 +59,11 @@ Resources:
       TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-cloudfront-01.yaml"
       Parameters:
         BucketName: !GetAtt StgS3Stack1.Outputs.BucketName
-        #BucketWebsiteURL: !GetAtt S3Stack1.Outputs.BucketWebsiteURL
         BucketRegionalDomainName: !GetAtt StgS3Stack1.Outputs.BucketRegionalDomainName
         CacheTTL: !Ref CloudFrontCacheTTL
         Env: !Ref EnvStg
         Prefix: !Ref Prefix
-        #StagingDistributionDnsName: ""
-        
+
   ProdCloudFrontStack1:
     Type: AWS::CloudFormation::Stack
     DependsOn:
@@ -77,13 +73,11 @@ Resources:
       TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-cloudfront-01.yaml"
       Parameters:
         BucketName: !GetAtt ProdS3Stack1.Outputs.BucketName
-        #BucketWebsiteURL: !GetAtt S3Stack1.Outputs.BucketWebsiteURL
         BucketRegionalDomainName: !GetAtt ProdS3Stack1.Outputs.BucketRegionalDomainName
         CacheTTL: !Ref CloudFrontCacheTTL
         Env: !Ref EnvProd
         Prefix: !Ref Prefix
-        #StagingDistributionDnsName: !GetAtt StgCloudFrontStack.Outputs.DistributionDomainName
-        
+
   ProdCloudFrontStack2:
     Type: AWS::CloudFormation::Stack
     DependsOn:
@@ -108,10 +102,7 @@ Resources:
         BucketArn: !GetAtt ProdS3Stack1.Outputs.BucketArn
         BucketName: !GetAtt ProdS3Stack1.Outputs.BucketName
         Distribution: !GetAtt ProdCloudFrontStack1.Outputs.Distribution
-        #DistributionDomainName: !GetAtt CloudFrontStack.Outputs.DistributionDomainName
-        #OAI: !GetAtt CloudFrontStack.Outputs.OAI
-        #Prefix: !Ref Prefix
-        
+
   StgS3Stack2:
     Type: AWS::CloudFormation::Stack
     DependsOn:
@@ -122,10 +113,7 @@ Resources:
         BucketArn: !GetAtt StgS3Stack1.Outputs.BucketArn
         BucketName: !GetAtt StgS3Stack1.Outputs.BucketName
         Distribution: !GetAtt StgCloudFrontStack.Outputs.Distribution
-        #DistributionDomainName: !GetAtt CloudFrontStack.Outputs.DistributionDomainName
-        #OAI: !GetAtt CloudFrontStack.Outputs.OAI
-        #Prefix: !Ref Prefix
-        
+
   LambdaStack:
     Type: AWS::CloudFormation::Stack
     Properties:
@@ -146,12 +134,8 @@ Resources:
       TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-customresource.yaml"
       Parameters:
         BucketName: !GetAtt ProdS3Stack1.Outputs.BucketName
-        #Env: !Ref EnvProd
-        #EnvProd: !Ref EnvProd
-        #EnvStg: !Ref EnvStg
         FunctionArn: !GetAtt LambdaStack.Outputs.FunctionArn
-        #Prefix: !Ref Prefix
-        
+
   StgCustomResourceStack:
     Type: AWS::CloudFormation::Stack
     DependsOn:
@@ -160,8 +144,4 @@ Resources:
       TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-customresource.yaml"
       Parameters:
         BucketName: !GetAtt StgS3Stack1.Outputs.BucketName
-        #Env: !Ref EnvProd
-        #EnvProd: !Ref EnvProd
-        #EnvStg: !Ref EnvStg
         FunctionArn: !GetAtt LambdaStack.Outputs.FunctionArn
-        #Prefix: !Ref Prefix
