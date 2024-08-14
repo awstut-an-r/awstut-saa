@@ -1,0 +1,46 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  #Architecture:
+  #  Type: String
+  
+  #BucketArn:
+  #  Type: String
+    
+  BucketName:
+    Type: String
+    
+  #EnvProd:
+  #  Type: String
+  #  
+  #EnvStg:
+  #  Type: String
+    
+  #Handler:
+  #  Type: String
+  #  
+  #Prefix:
+  #  Type: String
+  #  
+  #Runtime:
+  #  Type: String
+    
+  FunctionArn:
+    Type: String
+    
+  #Prefix:
+  #  Type: String
+    
+    
+Resources:
+  CustomResource:
+    Type: Custom::CustomResource
+    Properties:
+      BucketName: !Ref BucketName
+      #ServiceToken: !GetAtt Function.Arn
+      ServiceToken: !Ref FunctionArn
+      
+      
+#Outputs:
+#  CustomResourceReturnValue:
+#    Value: !GetAtt CustomResource.message

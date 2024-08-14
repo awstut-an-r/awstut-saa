@@ -1,0 +1,43 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  BucketArn:
+    Type: String
+
+  BucketName:
+    Type: String
+    
+  Distribution:
+    Type: String
+    
+  #OAI:
+  #  Type: String
+    
+  #Prefix:
+  #  Type: String
+    
+
+Resources:
+  BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref BucketName
+      PolicyDocument:
+        Statement:
+          Action:
+            - s3:GetObject
+          Effect: Allow
+          Principal: 
+            Service: 
+              - cloudfront.amazonaws.com
+          #Principal:
+          #  AWS: !Sub "arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${OAI}"
+          #Resource: !Sub "arn:aws:s3:::${BucketName}/*"
+          Resource: !Sub "${BucketArn}/*"
+          Condition: 
+            StringEquals:
+              AWS:SourceArn: !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${Distribution}"
+          #Condition:
+          #  StringLike:
+          #    aws:Referer:
+          #      - !Ref Prefix
