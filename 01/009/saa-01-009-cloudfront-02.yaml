@@ -3,31 +3,19 @@ AWSTemplateFormatVersion: 2010-09-09
 Parameters:
   Architecture:
     Type: String
-    
-  #BucketArn:
-  #  Type: String
-  
+
   Handler:
     Type: String
-    
-  #MemorySize:
-  #  Type: Number
-    
+
   Prefix:
     Type: String
     
   PrimaryDistribution:
     Type: String
-    
-  #ProdBucketArn:
-  #  Type: String
-    
+
   Runtime:
     Type: String
-    
-  #StgBucketArn:
-  #  Type: String
-  
+
   StagingDistributionDnsName:
     Type: String
     
@@ -38,25 +26,17 @@ Resources:
     Properties:
       ContinuousDeploymentPolicyConfig: 
         Enabled: true
-        #SingleHeaderPolicyConfig: 
-        #  SingleHeaderPolicyConfig
         SingleWeightPolicyConfig: 
-          #SessionStickinessConfig: 
-          #  SessionStickinessConfig
           Weight: .10
         StagingDistributionDnsNames: 
           - !Ref StagingDistributionDnsName
-        #TrafficConfig: 
-        #  TrafficConfig
         Type: SingleWeight
         
   CustomResource:
     Type: Custom::CustomResource
     Properties:
-      #BucketName: !Ref BucketName
       ContinuousDeploymentPolicy: !Ref ContinuousDeploymentPolicy
       Distribution: !Ref PrimaryDistribution
-      #ServiceToken: !Ref FunctionArn
       ServiceToken: !GetAtt Function.Arn
       
   Function:
@@ -82,11 +62,8 @@ Resources:
               get_response = cloudfront_client.get_distribution_config(
                 Id=distribution
                 )
-              #print(get_response)
-              #pprint.pprint(get_response)
-                
+
               update_config = get_response['DistributionConfig']
-              #pprint.pprint(update_config)
               etag = get_response['ETag']
               
               if event['RequestType'] == CREATE:
@@ -114,9 +91,6 @@ Resources:
             except Exception as e:
               print(e)
               cfnresponse.send(event, context, cfnresponse.FAILED, response_data)
-      #Environment:
-      #  Variables:
-      #    BUCKET_NAME: !Ref BucketName
       FunctionName: !Sub "${Prefix}-function-01"
       Handler: !Ref Handler
       Runtime: !Ref Runtime
@@ -147,10 +121,3 @@ Resources:
                   - cloudfront:UpdateDistribution
                 Resource:
                   - !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${PrimaryDistribution}"
-                  
-
-#Outputs:
-#  #BucketArn:
-#  
-#  FunctionArn:
-#    Value: !GetAtt Function.Arn
