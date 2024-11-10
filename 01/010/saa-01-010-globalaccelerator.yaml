@@ -1,9 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 
 Parameters:
-  #HealthCheckPort:
-  #  Type: Number
-    
   HealthCheckIntervalSeconds:
     Type: Number
 
@@ -37,13 +34,9 @@ Resources:
     Type: AWS::GlobalAccelerator::Accelerator
     Properties:
       Enabled: true
-      #IpAddresses: 
-      #  - String
       IpAddressType: IPV4
       Name: !Sub "${Prefix}-accelerator"
-      #Tags: 
-      #  - Tag
-      
+
   Listener:
     Type: AWS::GlobalAccelerator::Listener
     Properties:
@@ -58,18 +51,12 @@ Resources:
     Type: AWS::GlobalAccelerator::EndpointGroup
     Properties:
       EndpointConfigurations: 
-        - #AttachmentArn: String
-          #ClientIPPreservationEnabled: Boolean
-          EndpointId: !Sub "{{resolve:ssm:${SSMParameterAlbName1}}}"
-          #Weight: Integer
+        - EndpointId: !Sub "{{resolve:ssm:${SSMParameterAlbName1}}}"
       EndpointGroupRegion: !Ref Region1
       HealthCheckIntervalSeconds: !Ref HealthCheckIntervalSeconds
-      #HealthCheckPath: String
       HealthCheckPort: !Ref HTTPPort
       HealthCheckProtocol: TCP
       ListenerArn: !Ref Listener
-      #PortOverrides: 
-      #  - PortOverride
       ThresholdCount: !Ref ThresholdCount
       TrafficDialPercentage: !Ref TrafficDialPercentage
       
@@ -77,91 +64,11 @@ Resources:
     Type: AWS::GlobalAccelerator::EndpointGroup
     Properties:
       EndpointConfigurations: 
-        - #AttachmentArn: String
-          #ClientIPPreservationEnabled: Boolean
-          EndpointId: !Sub "{{resolve:ssm:${SSMParameterAlbName2}}}"
-          #Weight: Integer
+        - EndpointId: !Sub "{{resolve:ssm:${SSMParameterAlbName2}}}"
       EndpointGroupRegion: !Ref Region2
       HealthCheckIntervalSeconds: !Ref HealthCheckIntervalSeconds
-      #HealthCheckPath: String
       HealthCheckPort: !Ref HTTPPort
       HealthCheckProtocol: TCP
       ListenerArn: !Ref Listener
-      #PortOverrides: 
-      #  - PortOverride
       ThresholdCount: !Ref ThresholdCount
       TrafficDialPercentage: !Ref TrafficDialPercentage
-
-  #HealthCheck1:
-  #  Type: AWS::Route53::HealthCheck
-  #  Properties:
-  #    HealthCheckConfig:
-  #      FailureThreshold: !Ref FailureThreshold
-  #      FullyQualifiedDomainName: !Sub "{{resolve:ssm:${SSMParameterALBDNSName1}}}"
-  #      MeasureLatency: true
-  #      Port: !Ref HTTPPort
-  #      RequestInterval: !Ref RequestInterval
-  #      ResourcePath: /
-  #      Type: HTTP
-  #      
-  #HealthCheck2:
-  #  Type: AWS::Route53::HealthCheck
-  #  Properties:
-  #    HealthCheckConfig:
-  #      FailureThreshold: !Ref FailureThreshold
-  #      FullyQualifiedDomainName: !Sub "{{resolve:ssm:${SSMParameterALBDNSName2}}}"
-  #      MeasureLatency: true
-  #      Port: !Ref HTTPPort
-  #      RequestInterval: !Ref RequestInterval
-  #      ResourcePath: /
-  #      Type: HTTP
-#
-  #RecordSetGroup:
-  #  Type: AWS::Route53::RecordSetGroup
-  #  Properties:
-  #    HostedZoneName: !Sub "${DomainName}."
-  #    RecordSets:
-  #      - AliasTarget: 
-  #          DNSName: !Sub "{{resolve:ssm:${SSMParameterALBDNSName1}}}"
-  #          EvaluateTargetHealth: true
-  #          HostedZoneId: !Ref ALBHostedZoneId1
-  #        #CidrRoutingConfig: 
-  #        #  CidrRoutingConfig
-  #        #Failover: String
-  #        #GeoLocation: 
-  #        #  GeoLocation
-  #        HealthCheckId: !Ref HealthCheck1
-  #        #HostedZoneId: !Ref ALBHostedZoneId1
-  #        #HostedZoneName: String
-  #        #MultiValueAnswer: Boolean
-  #        #Name: !Sub "{{resolve:ssm:${SSMParameterALBDNSName1}}}"
-  #        Name: !Ref DomainName
-  #        Region: !Ref Region1
-  #        #ResourceRecords: 
-  #        #  - String
-  #        SetIdentifier: !Ref Region1
-  #        #TTL: !Ref TTL
-  #        Type: A
-  #        #Weight: Integer
-  #      - AliasTarget: 
-  #          DNSName: !Sub "{{resolve:ssm:${SSMParameterALBDNSName2}}}"
-  #          EvaluateTargetHealth: true
-  #          HostedZoneId: !Ref ALBHostedZoneId2
-  #        #CidrRoutingConfig: 
-  #        #  CidrRoutingConfig
-  #        #Failover: String
-  #        #GeoLocation: 
-  #        #  GeoLocation
-  #        HealthCheckId: !Ref HealthCheck2
-  #        #HostedZoneId: !Ref ALBHostedZoneId2
-  #        #HostedZoneName: String
-  #        #MultiValueAnswer: Boolean
-  #        #Name: !Sub "{{resolve:ssm:${SSMParameterALBDNSName2}}}"
-  #        Name: !Ref DomainName
-  #        Region: !Ref Region2
-  #        #ResourceRecords: 
-  #        #  - String
-  #        SetIdentifier: !Ref Region2
-  #        #TTL: !Ref TTL
-  #        Type: A
-  #        #Weight: Integer
