@@ -15,10 +15,7 @@ Parameters:
     
   PublicSubnet2:
     Type: String
-    
-  #SSMParameter:
-  #  Type: String
-    
+
   VPC:
     Type: String
     
@@ -82,8 +79,6 @@ Resources:
 Outputs:
   ALBTargetGroup:
     Value: !Ref ALBTargetGroup
-    
-  #ALBDNSName:
-  #  Value: !GetAtt ALB.DNSName
+
   ALB:
     Value: !Ref ALB
