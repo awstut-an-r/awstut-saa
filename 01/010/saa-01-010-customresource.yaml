@@ -3,10 +3,7 @@ AWSTemplateFormatVersion: 2010-09-09
 Parameters:
   ALB:
     Type: String
-  
-  #ALBDNSName:
-  #  Type: String
-    
+
   Handler:
     Type: String
     
@@ -46,7 +43,6 @@ Resources:
           #ssm_client = boto3.client('ssm')
            
           CREATE = 'Create'
-          #DELETE = 'Delete'
           response_data = {}
           
           def lambda_handler(event, context):
@@ -59,13 +55,7 @@ Resources:
                   Overwrite=True
                 )
                 print(response)
-                
-              #elif event['RequestType'] == DELETE:
-              #  response = ssm_client.delete_parameter(
-              #    Name=parameter_name
-              #  )
-              #  print(response)
-              
+
               cfnresponse.send(event, context, cfnresponse.SUCCESS, response_data)
               
             except Exception as e:
@@ -73,9 +63,7 @@ Resources:
               cfnresponse.send(event, context, cfnresponse.FAILED, response_data)
       Environment:
         Variables:
-          #CERTIFICATE: !Ref Certificate
           PARAMETER_NAME: !Ref SSMParameter
-          #PARAMETER_VALUE: !Ref ALBDNSName
           PARAMETER_VALUE: !Ref ALB
           REGION: !Ref SSMParameterRegion
       FunctionName: !Sub "${Prefix}-function-01"
@@ -105,5 +93,4 @@ Resources:
               - Effect: Allow
                 Action:
                   - ssm:PutParameter
-                  #- ssm:DeleteParameter
                 Resource: "*"
