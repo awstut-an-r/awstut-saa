@@ -88,33 +88,10 @@ Resources:
       Parameters:
         HealthCheckIntervalSeconds: 30
         HTTPPort: !Ref HTTPPort
-        #HostedZoneId: !Ref HostedZoneId
         Prefix: !Ref Prefix
         Region1: !Ref Region1
         Region2: !Ref Region2
-        #RequestInterval: 30
         SSMParameterAlbName1: !GetAtt SSMStack.Outputs.ParameterAlb1
         SSMParameterAlbName2: !GetAtt SSMStack.Outputs.ParameterAlb2
         ThresholdCount: 3
         TrafficDialPercentage: 100
-        
-  #Route53Stack:
-  #  Type: AWS::CloudFormation::Stack
-  #  DependsOn:
-  #    - SSMStack
-  #    - StackSetsStack
-  #  Properties:
-  #    TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-route53.yaml"
-  #    Parameters:
-  #      ALBHostedZoneId1: !Ref ALBHostedZoneId1
-  #      ALBHostedZoneId2: !Ref ALBHostedZoneId2
-  #      DomainName: !Ref DomainName
-  #      FailureThreshold: 3
-  #      HTTPPort: !Ref HTTPPort
-  #      HostedZoneId: !Ref HostedZoneId
-  #      Region1: !Ref Region1
-  #      Region2: !Ref Region2
-  #      RequestInterval: 30
-  #      SSMParameterALBDNSName1: !GetAtt SSMStack.Outputs.Parameter1
-  #      SSMParameterALBDNSName2: !GetAtt SSMStack.Outputs.Parameter2
-  #      #TTL: 60
