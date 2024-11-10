@@ -1,0 +1,35 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  Prefix:
+    Type: String
+
+  Region1:
+    Type: String
+    
+  Region2:
+    Type: String
+    
+
+Resources:
+  ParameterAlb1:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "${Prefix}-alb-${Region1}"
+      Type: String
+      Value: " "
+      
+  ParameterAlb2:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "${Prefix}-alb-${Region2}"
+      Type: String
+      Value: " "
+      
+      
+Outputs:
+  ParameterAlb1:
+    Value: !Ref ParameterAlb1
+    
+  ParameterAlb2:
+    Value: !Ref ParameterAlb2
